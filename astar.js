@@ -15,6 +15,7 @@
         var exports = definition();
         window.astar = exports.astar;
         window.Graph = exports.Graph;
+        window.Score = exports.Score;
     }
 })(function() {
 
@@ -58,8 +59,9 @@ var astar = {
     * @param {Function} [options.heuristic] Heuristic function (see
     *          astar.heuristics).
     */
-    search: function(graph, start, end, options) {
+    search: function(graph, start, end, max_per_turn, stop_points, options) {
         astar.init(graph);
+        if (stop_points === undefined) stop_points = [];
 
         options = options || {};
         var heuristic = options.heuristic || astar.heuristics.manhattan,
@@ -68,7 +70,7 @@ var astar = {
         var openHeap = getHeap(),
             closestNode = start; // set the start node to be the closest if required
 
-        start.h = heuristic(start, end);
+        start.h = new Score(heuristic(start, end), max_per_turn);
 
         openHeap.push(start);
 
@@ -98,7 +100,7 @@ var astar = {
 
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
-                var gScore = currentNode.g + neighbor.getCost(currentNode),
+                var gScore = new Score(currentNode.g + neighbor.getCost(currentNode), max_per_turn, neighbor.stop_point),
                     beenVisited = neighbor.visited;
 
                 if (!beenVisited || gScore < neighbor.g) {
@@ -106,14 +108,14 @@ var astar = {
                     // Found an optimal (so far) path to this node.  Take score for node to see how good it is.
                     neighbor.visited = true;
                     neighbor.parent = currentNode;
-                    neighbor.h = neighbor.h || heuristic(neighbor, end);
+                    neighbor.h = neighbor.h || new Score(heuristic(neighbor, end), max_per_turn);
                     neighbor.g = gScore;
-                    neighbor.f = neighbor.g + neighbor.h;
+                    neighbor.f = new Score(neighbor.g + neighbor.h, max_per_turn);
 
                     if (closest) {
                         // If the neighbour is closer than the current closestNode or if it's equally close but has
                         // a cheaper path than the current closest node then it becomes the closest node
-                        if (neighbor.h < closestNode.h || (neighbor.h === closestNode.h && neighbor.g < closestNode.g)) {
+                        if (neighbor.h < closestNode.h || (neighbor.h == closestNode.h && neighbor.g < closestNode.g)) {
                             closestNode = neighbor;
                         }
                     }
@@ -154,6 +156,24 @@ var astar = {
     }
 };
 
+function Score(score, max_per_turn, stop_point) {
+  this.huge_num = 1000000;
+  if (!max_per_turn) max_per_turn = this.huge_num;
+
+  this.turns = Math.floor(score / this.huge_num);
+  var extra_weight = score % this.huge_num;
+  if (stop_point && extra_weight < max_per_turn) extra_weight = max_per_turn;
+  var added_turns = Math.max(Math.ceil(extra_weight / max_per_turn), 1) - 1;
+  this.turns += added_turns;
+  this.extra_weight = extra_weight - added_turns * max_per_turn;
+}
+
+Score.prototype.valueOf = function() {
+  var num = this.huge_num * this.turns + this.extra_weight;
+  return num;
+};
+
+
 /**
 * A graph memory structure
 * @param {Array} gridIn 2D array of input weights
@@ -169,7 +189,11 @@ function Graph(gridIn, options) {
         this.grid[x] = [];
 
         for (var y = 0, row = gridIn[x]; y < row.length; y++) {
-            var node = new GridNode(x, y, row[y]);
+            if (typeof row[y] == 'number') {
+              var node = new GridNode(x, y, row[y]);
+            } else if (typeof row[y] == 'object') {
+              var node = new GridNode(x, y, row[y]);
+            }
             this.grid[x][y] = node;
             this.nodes.push(node);
         }
@@ -242,10 +266,11 @@ Graph.prototype.toString = function() {
     return graphString.join("\n");
 };
 
-function GridNode(x, y, weight) {
+function GridNode(x, y, weight, stop_point) {
     this.x = x;
     this.y = y;
     this.weight = weight;
+    this.stop_point = stop_point ? true : false;
 }
 
 GridNode.prototype.toString = function() {
@@ -258,6 +283,10 @@ GridNode.prototype.getCost = function() {
 
 GridNode.prototype.isWall = function() {
     return this.weight === 0;
+};
+
+GridNode.prototype.isStopPoint = function() {
+    return this.stop_point;
 };
 
 function BinaryHeap(scoreFunction){
@@ -383,7 +412,8 @@ BinaryHeap.prototype = {
 
 return {
     astar: astar,
-    Graph: Graph
+    Graph: Graph,
+    Score: Score,
 };
 
 });

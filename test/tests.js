@@ -7,6 +7,7 @@ test( "Sanity Checks", function() {
   ok (typeof astar !== "undefined", "Astar exists");
 });
 
+/*
 test( "Basic Horizontal", function() {
 
   var result1 = runSearch([[1],[1]], [0,0], [1,0]);
@@ -54,13 +55,151 @@ test( "Pathfinding", function() {
 
   equal (result1.text, "(0,1)(1,1)(1,2)(2,2)(2,3)", "Result is expected");
 });
+*/
 
+test( "Pathfinding with stop points", function() {
+  var graph = new Graph([
+      [1,1,0],
+      [1,1,0],
+      [0,1,1]
+  ]);
+  graph.grid[1][0].stop_point = true;
+  var result1 = runSearch(graph, [0,0], [2,2], 2);
+  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoided stop point due to high movement value");
+
+  var graph = new Graph([
+      [1,3.9,0],
+      [1,1,0],
+      [0,1,1]
+  ]);
+  graph.grid[1][0].stop_point = true;
+  var result1 = runSearch(graph, [0,0], [2,2], 4);
+  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoided stop point despite traversing a high weight.");
+
+  var graph = new Graph([
+      [1,4,0],
+      [1,1,0],
+      [0,1,1]
+  ]);
+  graph.grid[1][0].stop_point = true;
+  var result1 = runSearch(graph, [0,0], [2,2], 4);
+  equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Used stop point due to overly high weights elsewhere.");
+
+  var graph = new Graph([
+      [1,1,0],
+      [1,1,0],
+      [0,1,1]
+  ]);
+  graph.grid[1][0].stop_point = true;
+  var result1 = runSearch(graph, [0,0], [2,2], 1);
+  equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Used stop point due to low movement causing no effect.");
+
+});
+
+test( "Score (creation)", function() {
+
+  var score = new Score(3, 0);
+  equal(score.valueOf(), 3, 'score value is equal to score input when max_per_turn is 0');
+
+  var score = new Score(96, false);
+  equal(score.valueOf(), 96, 'score value is equal to score input when max_per_turn is false');
+
+  var score = new Score(2567, undefined);
+  equal(score.valueOf(), 2567, 'score value is equal to score input when max_per_turn is undefined');
+
+});
+
+test( "Score (valueOf)", function() {
+
+  var score = new Score(0, 10);
+  equal(score.valueOf(), 0, 'score valueOf is zero when score input is zero');
+
+  var score = new Score(5, 10);
+  equal(score.valueOf(), 5, 'score valueOf equals the score input when the input is less than max_per_turn');
+
+  var score = new Score(10, 10);
+  equal(score.valueOf(), 10, 'score valueOf equals the score input when the input is equal to max_per_turn');
+
+  var score = new Score(11, 10);
+  equal(score.valueOf(), 1000001, 'score valueOf becomes huge when score input is greater than max_per_turn');
+
+  var score = new Score(22, 5);
+  equal(score.valueOf(), 4000002, 'score valueOf becomes multiples of huge when score input is much greater than max_per_turn');
+
+});
+
+test( "Score (comparisons)", function() {
+
+  var score1 = new Score(3, 5);
+  var score2 = new Score(6, 5);
+  ok(score1 < score2, 'score with fewer turns (and more extra_weight) is less than score with more turns');
+
+  var score1 = new Score(3, 5);
+  var score2 = new Score(6, 5);
+  ok(score1 <= score2, 'score with fewer turns (and more extra_weight) is less than or equal to than score with more turns');
+
+  var score1 = new Score(3, 5);
+  var score2 = new Score(3, 5);
+  ok(score1.valueOf() == score2.valueOf(), 'scores of equal inputs have equal values');
+
+  var score1 = new Score(3, 5);
+  var score2 = new Score(3, 5);
+  ok(score1 != score2, 'scores of equal inputs are not equal by comparison');
+
+  var score1 = new Score(3, 5);
+  var score2 = new Score(3, 5);
+  ok(score1 >= score2, 'scores of equal inputs are equal to or greater than each other');
+
+});
+
+test( "Score (operations)", function() {
+
+  var score1 = new Score(1, 5);
+  var score2 = new Score(2, 5);
+  equal(score1 + score2, 3, 'adding scores is as normal if both scores are far below their max_per_turn values');
+
+  var score1 = new Score(3, 5);
+  var score2 = new Score(6, 5);
+  equal(score1 + score2, 1000004, 'adding scores is as normal if addition does not bump value of turns');
+
+  var score1 = new Score(3, 5);
+  var score2 = new Score(4, 5);
+  equal(score1 + score2, 7, 'addition does not automatically bump the turns amount (seen through huge number)');
+
+  var score1 = new Score(9, 5);
+  var score2 = new Score(9, 5);
+  equal(score1 + score2, 2000008, 'addition does not automatically bump the turns amount with already huge numbers');
+
+  var score1 = new Score(3, 5);
+  var score2 = new Score(4, 5);
+  equal(new Score(score1 + score2, 5), 1000002, 'turns value is bumped only when creating a new score object');
+
+  var score = new Score(3, 5);
+  var num = 4;
+  equal(score + num, 7, "a score added with a number acts as two numbers added");
+
+  var score = new Score(2, 5);
+  var num = 4;
+  equal(num / score, 2, "a number divided by a score acts as normal");
+
+  var score = new Score(2, 5);
+  var num = 4;
+  equal(score / num, 0.5, "a score divided by a number acts as normal");
+
+  var score = new Score(2, 5);
+  var num = 4;
+  equal(score * num, 8, "a score multiplied by a number acts as two numbers being multiplied");
+
+});
+
+/*
 test( "Diagonal Pathfinding", function() {
-  var result1 = runSearch(new Graph([
+  var graph = new Graph([
       [1,1,1,1],
       [0,1,1,0],
       [0,0,1,1]
-  ], { diagonal: true}), [0,0], [2,3]);
+  ], { diagonal: true});
+  var result1 = runSearch(graph, [0,0], [2,3]);
 
   equal (result1.text, "(1,1)(2,2)(2,3)", "Result is expected");
 });
@@ -70,7 +209,7 @@ test( "Pathfinding to closest", function() {
       [1,1,1,1],
       [0,1,1,0],
       [0,0,1,1]
-  ], [0,0], [2,1], {closest: true});
+  ], [0,0], [2,1], undefined, [], {closest: true});
 
   equal (result1.text, "(0,1)(1,1)", "Result is expected - pathed to closest node");
 
@@ -78,7 +217,7 @@ test( "Pathfinding to closest", function() {
       [1,0,1,1],
       [0,1,1,0],
       [0,0,1,1]
-  ], [0,0], [2,1], {closest: true});
+  ], [0,0], [2,1], undefined, [], {closest: true});
 
   equal (result2.text, "", "Result is expected - start node was closest node");
 
@@ -86,19 +225,20 @@ test( "Pathfinding to closest", function() {
       [1,1,1,1],
       [0,1,1,0],
       [0,1,1,1]
-  ], [0,0], [2,1], {closest: true});
+  ], [0,0], [2,1], undefined, [], {closest: true});
 
   equal (result3.text, "(0,1)(1,1)(2,1)", "Result is expected - target node was reachable");
 });
+*/
 
-function runSearch(graph, start, end, options) {
+function runSearch(graph, start, end, max_per_turn, stop_points, options) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
   }
   start = graph.grid[start[0]][start[1]];
   end = graph.grid[end[0]][end[1]];
   var sTime = new Date(),
-    result = astar.search(graph, start, end, options),
+    result = astar.search(graph, start, end, max_per_turn, [], options),
     eTime = new Date();
   return {
     result: result,
@@ -113,6 +253,7 @@ function pathToString(result) {
   }).join("");
 }
 
+/*
 test( "GPS Pathfinding", function() {
   var data = [
     {name: "Paris", lat: 48.8567, lng: 2.3508},
@@ -198,12 +339,13 @@ test( "GPS Pathfinding", function() {
     return node0.GPS_distance(node1);
   };
 
-  var result = astar.search(graph, start, end, {heuristic: GPSheuristic});
+  var result = astar.search(graph, start, end, undefined, [], {heuristic: GPSheuristic});
   equal(result.length, 3, "Cannes is 3 cities away from Paris");
   equal(result[0].name, "Lyon", "City #1 is Lyon");
   equal(result[1].name, "Marseille", "City #2 is Marseille");
   equal(result[2].name, "Cannes", "City #3 is Cannes");
 });
+*/
 
 // // https://gist.github.com/bgrins/581352
 // function runBasic() {
