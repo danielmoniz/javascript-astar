@@ -7,7 +7,6 @@ test( "Sanity Checks", function() {
   ok (typeof astar !== "undefined", "Astar exists");
 });
 
-/*
 test( "Basic Horizontal", function() {
 
   var result1 = runSearch([[1],[1]], [0,0], [1,0]);
@@ -55,44 +54,62 @@ test( "Pathfinding", function() {
 
   equal (result1.text, "(0,1)(1,1)(1,2)(2,2)(2,3)", "Result is expected");
 });
-*/
 
 test( "Pathfinding with stop points", function() {
-  var graph = new Graph([
-      [1,1,0],
-      [1,1,0],
-      [0,1,1]
-  ]);
-  graph.grid[1][0].stop_point = true;
-  var result1 = runSearch(graph, [0,0], [2,2], 2);
-  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoided stop point due to high movement value");
 
   var graph = new Graph([
-      [1,3.9,0],
+      [1,1,0],
       [1,1,0],
       [0,1,1]
   ]);
-  graph.grid[1][0].stop_point = true;
-  var result1 = runSearch(graph, [0,0], [2,2], 4);
-  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoided stop point despite traversing a high weight.");
+  var stop_points = [{ x: 1, y: 0 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 2, stop_points);
+  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid stop point due to high movement value");
+
+  var graph = new Graph([
+      [1,3,0],
+      [1,1,0],
+      [0,1,1]
+  ]);
+  var stop_points = [{ x: 1, y: 0 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 4, stop_points);
+  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid stop point despite traversing a high weight.");
 
   var graph = new Graph([
       [1,4,0],
       [1,1,0],
       [0,1,1]
   ]);
-  graph.grid[1][0].stop_point = true;
-  var result1 = runSearch(graph, [0,0], [2,2], 4);
-  equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Used stop point due to overly high weights elsewhere.");
+  var stop_points = [{ x: 1, y: 0 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 4, stop_points);
+  equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Use stop point due to overly high weights elsewhere.");
 
   var graph = new Graph([
       [1,1,0],
       [1,1,0],
       [0,1,1]
   ]);
-  graph.grid[1][0].stop_point = true;
-  var result1 = runSearch(graph, [0,0], [2,2], 1);
-  equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Used stop point due to low movement causing no effect.");
+  var stop_points = [{ x: 1, y: 0 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 1, stop_points);
+  equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Use stop point due to low movement causing no effect.");
+
+  var graph = new Graph([
+      [1,5,5],
+      [5,0,1],
+      [4,1,1]
+  ]);
+  var stop_points = [{ x: 2, y: 1 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 10, stop_points);
+  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "stop point is more efficient when it happens on the final movement point of max_per_turn");
+
+  var graph = new Graph([
+      [1,10,4],
+      [5,0,5],
+      [5,1,1]
+  ]);
+  var stop_points = [{ x: 2, y: 1 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 10, stop_points);
+  equal (result1.text, "(0,1)(0,2)(1,2)(2,2)", "stop point after full movement amount should jump turns value (2,1 vs 1,10)");
 
 });
 
@@ -192,7 +209,6 @@ test( "Score (operations)", function() {
 
 });
 
-/*
 test( "Diagonal Pathfinding", function() {
   var graph = new Graph([
       [1,1,1,1],
@@ -229,7 +245,6 @@ test( "Pathfinding to closest", function() {
 
   equal (result3.text, "(0,1)(1,1)(2,1)", "Result is expected - target node was reachable");
 });
-*/
 
 function runSearch(graph, start, end, max_per_turn, stop_points, options) {
   if (!(graph instanceof Graph)) {
@@ -238,7 +253,7 @@ function runSearch(graph, start, end, max_per_turn, stop_points, options) {
   start = graph.grid[start[0]][start[1]];
   end = graph.grid[end[0]][end[1]];
   var sTime = new Date(),
-    result = astar.search(graph, start, end, max_per_turn, [], options),
+    result = astar.search(graph, start, end, max_per_turn, stop_points, options),
     eTime = new Date();
   return {
     result: result,
@@ -253,7 +268,6 @@ function pathToString(result) {
   }).join("");
 }
 
-/*
 test( "GPS Pathfinding", function() {
   var data = [
     {name: "Paris", lat: 48.8567, lng: 2.3508},
@@ -345,7 +359,6 @@ test( "GPS Pathfinding", function() {
   equal(result[1].name, "Marseille", "City #2 is Marseille");
   equal(result[2].name, "Cannes", "City #3 is Cannes");
 });
-*/
 
 // // https://gist.github.com/bgrins/581352
 // function runBasic() {

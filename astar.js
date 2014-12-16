@@ -61,7 +61,13 @@ var astar = {
     */
     search: function(graph, start, end, max_per_turn, stop_points, options) {
         astar.init(graph);
-        if (stop_points === undefined) stop_points = [];
+
+        if (!stop_points) stop_points = [];
+        for (var i in stop_points) {
+          var point = stop_points[i];
+          var node = graph.grid[point.x][point.y];
+          node.stop_point = true;
+        }
 
         options = options || {};
         var heuristic = options.heuristic || astar.heuristics.manhattan,
@@ -100,7 +106,10 @@ var astar = {
 
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
-                var gScore = new Score(currentNode.g + neighbor.getCost(currentNode), max_per_turn, neighbor.stop_point),
+                if (currentNode.g == 0) {
+                  currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
+                }
+                var gScore = currentNode.g.add(neighbor.getCost(currentNode), neighbor.stop_point),
                     beenVisited = neighbor.visited;
 
                 if (!beenVisited || gScore < neighbor.g) {
@@ -110,7 +119,7 @@ var astar = {
                     neighbor.parent = currentNode;
                     neighbor.h = neighbor.h || new Score(heuristic(neighbor, end), max_per_turn);
                     neighbor.g = gScore;
-                    neighbor.f = new Score(neighbor.g + neighbor.h, max_per_turn);
+                    neighbor.f = neighbor.g.add(neighbor.h);
 
                     if (closest) {
                         // If the neighbour is closer than the current closestNode or if it's equally close but has
@@ -160,6 +169,9 @@ function Score(score, max_per_turn, stop_point) {
   this.huge_num = 1000000;
   if (!max_per_turn) max_per_turn = this.huge_num;
 
+  this.max_per_turn = max_per_turn;
+  this.stop_point = stop_point;
+
   this.turns = Math.floor(score / this.huge_num);
   var extra_weight = score % this.huge_num;
   if (stop_point && extra_weight < max_per_turn) extra_weight = max_per_turn;
@@ -168,9 +180,36 @@ function Score(score, max_per_turn, stop_point) {
   this.extra_weight = extra_weight - added_turns * max_per_turn;
 }
 
-Score.prototype.valueOf = function() {
-  var num = this.huge_num * this.turns + this.extra_weight;
-  return num;
+Score.prototype.valueOf = function(turns, extra_weight) {
+  if (turns === undefined || extra_weight === undefined) {
+    return this.huge_num * this.turns + this.extra_weight;
+  }
+  return this.huge_num * turns + extra_weight;
+};
+
+/*
+ * Returns a new score object that has had a value added correctly.
+ */
+Score.prototype.add = function(addition, stop_point) {
+  if (addition === undefined) throw new Error('BadParam', 'Must specify amount to add.');
+
+  var new_score = new Score(addition, this.max_per_turn);
+  var total_extra_weight = this.extra_weight + new_score.extra_weight;
+
+  if (total_extra_weight > this.max_per_turn) {
+    // carry over the entire addition as extra weight (new turn)
+    var turns = this.turns + new_score.turns + 1;
+    var extra_weight = new_score.extra_weight;
+    var value = this.valueOf(turns, extra_weight);
+    var result_score = new Score(value, this.max_per_turn, stop_point);
+    return result_score;
+
+  } else {
+    // simply return the two after adding their properties
+    var sum = this.valueOf() + new_score.valueOf();
+    return new Score(sum, this.max_per_turn, stop_point);
+  }
+
 };
 
 
