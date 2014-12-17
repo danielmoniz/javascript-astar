@@ -7,7 +7,7 @@ See a demo of the original version at http://www.briangrinstead.com/files/astar/
 ## Features
 
 This is a library for pathfinding intended for use with turn-based games. It
-maintains compatibility with standard pathfinding searches using graphs that 
+maintains compatibility with standard pathfinding searches using graphs that
 contain weights.
 
 Additionally, it includes the ability to provide (along with the graph & start
@@ -23,10 +23,22 @@ Some examples as to how these could be used:
 * A trap is sprung that holds a character in place for the remainder of their
 turn.
 * An army has an area of influence in which opposing armies must stop before
-continuing on. This allows the  Defending player the chance to respond by
-either attacking or retreating. It also allows for the possibility of ambushes.
+continuing on. This allows the defending player the chance to respond by
+either attacking or retreating.
 * A display that indicates everywhere a character can move in a single turn.
 * ...and so on.
+
+max-per-turn can also be an array of values. This represents an entity having a
+variable movement speed. The last value will be used for all later movement.
+
+Examples:
+
+* Let max-per-turn be [1, 2, 3]. This could represent an accelerating car
+  that can move 1 space on its first turn, 2 on its second, and 3 on its third.
+  It then continues at a top speed of 3 indefinitely.
+* Let max-per-turn be [8, 0, 4]. This could represent a runner pushing
+  themselves to sprint on the first turn, then tiring and needing to rest,
+  and eventually reaching a sustainable speed of 4 by the third turn and on.
 
 Using the standard javascript-astar library to solve these problems is
 impossible without taking a massive hit on performance or accepting sub-optimal

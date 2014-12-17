@@ -62,9 +62,6 @@ var astar = {
     search: function(graph, start, end, max_per_turn, stop_points, options) {
         astar.init(graph);
 
-        // @TODO Allow for two values of max_per_turn (one for first turn, the
-        // other for the rest)
-
         if (!stop_points) stop_points = [];
         for (var i in stop_points) {
           var point = stop_points[i];
@@ -107,13 +104,18 @@ var astar = {
                     continue;
                 }
 
+                // @TODO Ensure nodes that are impossible to reach are removed
+                // (or waited for if they can be reahed later)
+
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
                 if (currentNode.g == 0) {
                   currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
                 }
-                var gScore = currentNode.g.add(neighbor.getCost(currentNode), neighbor.stop_point),
+                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stop_point),
                     beenVisited = neighbor.visited;
+
+                if (gScore === false) continue;
 
                 if (!beenVisited || gScore < neighbor.g) {
 
@@ -168,20 +170,157 @@ var astar = {
     }
 };
 
+/*
+ * An object that stores information about the number of required turns for a
+ * given move, as well as the number of extra spaces that would be traversed
+ * before getting there.
+ * Score objects use a large number to calculate their values. A higher turn
+ * value always means a higher score, meaning that the path is less optimal.
+ * Extra spaces required (extra_weight) are treated as tiebreakers.
+ *
+ * Eg. the score (1, 3) represents 1 turn and 3 extra spaces to move there.
+ * (1, 3) < (2, 1) < (2, 4)
+ *
+ * Specifically, (3, 5) evaluates to 3 * large_number + 5
+ * If the large number is 1 million, then (3, 5) evaluates to 3000005 when
+ * using valueOf() or comparison operators.
+ * NOTE: Equality still represents object equality, not Score value equality.
+ * So (1, 3) != (1, 3), even though they evaluate to the same number.
+ * Always use valueOf() when comparing scores to values for equality.
+ *
+ * A max_per_turn of 0 implies that there is no max_per_turn, ie. treat the
+ * pathing task as normal (without turns or stop_points).
+ *
+ * max_per_turn can be an array, eg. [3, 5], which represents movement limits
+ * on different turns. The last value is used for any turns for which no
+ * max_per_turn value was provided. Eg. one could move 3, then 5, then 5, 5,...
+ *
+ * See README for more information.
+ */
 function Score(score, max_per_turn, stop_point) {
+  if ((typeof score != 'number' && typeof score != 'object') || score === undefined) {
+    throw new Error('BadParam', 'score value must be a number or another score object.');
+  }
+
   this.huge_num = 1000000;
   if (!max_per_turn) max_per_turn = this.huge_num;
-
   this.max_per_turn = max_per_turn;
-  this.stop_point = stop_point;
 
-  this.turns = Math.floor(score / this.huge_num);
+  var turns = Math.floor(score / this.huge_num);
   var extra_weight = score % this.huge_num;
-  if (stop_point && extra_weight < max_per_turn) extra_weight = max_per_turn;
-  var added_turns = Math.max(Math.ceil(extra_weight / max_per_turn), 1) - 1;
-  this.turns += added_turns;
-  this.extra_weight = extra_weight - added_turns * max_per_turn;
+
+  if (typeof max_per_turn == 'object') {
+    var first_turn_max = max_per_turn[0];
+    var future_turns_max = max_per_turn[0];
+    if (max_per_turn.length > 1) {
+      var future_turns_max = max_per_turn.slice(1);
+    }
+
+    if (extra_weight > first_turn_max) {
+      // can spend entire first turn on the extra weight available
+      extra_weight -= first_turn_max;
+      turns += 1;
+      var value = this.valueOf(turns, extra_weight);
+      var new_score = new Score(value, future_turns_max, stop_point);
+      this.setValues(new_score.turns, new_score.extra_weight, future_turns_max);
+      return;
+
+    } else {
+      if (stop_point && extra_weight < first_turn_max) extra_weight = first_turn_max;
+      this.setValues(turns, extra_weight, max_per_turn);
+      return;
+    }
+
+    // otherwise, build score object as normal
+  } else if (typeof max_per_turn == 'number') {
+    var added_turns = Math.max(Math.ceil(extra_weight / max_per_turn), 1) - 1;
+    turns += added_turns;
+    extra_weight = extra_weight - added_turns * max_per_turn;
+    if (stop_point && extra_weight < max_per_turn) extra_weight = max_per_turn;
+    this.setValues(turns, extra_weight, this.max_per_turn);
+  } else {
+    throw new Error('BadParam', 'max_per_turn must be an array or a number.');
+  }
+
 }
+
+/*
+ * Returns a new score object that has had a value added correctly,
+ * as if 'addition' is the weight for a single space.
+ * Will return false if movement to that space is impossible.
+ */
+Score.prototype.addSingleSpace = function(addition, stop_point) {
+  if (typeof addition != 'number') throw new Error('BadParam', 'Must specify amount to add.');
+
+  var max_per_turn_value = this.max_per_turn;
+  if (max_per_turn_value.length) max_per_turn_value = this.max_per_turn[0];
+
+  if (typeof this.max_per_turn == 'number' || (this.max_per_turn.length && this.max_per_turn.length <= 1)) {
+    // do or die  - if addition is too high, move is impossible
+    if (addition > max_per_turn_value) {
+      return false;
+    }
+  }
+
+  if (addition + this.extra_weight > max_per_turn_value) {
+    var max_per_turn = this.max_per_turn;
+    if (max_per_turn.length && max_per_turn.length > 1) {
+      max_per_turn = max_per_turn.slice(1);
+    } else if (max_per_turn.length && max_per_turn.length <= 1) {
+      max_per_turn = max_per_turn[0];
+    }
+    var new_value = this.valueOf(this.turns + 1, 0);
+    var new_score = new Score(new_value, max_per_turn);
+    return new_score.addSingleSpace(addition, stop_point);
+
+  }
+
+  var extra_weight = this.extra_weight + addition;
+  var new_value = this.valueOf(this.turns, extra_weight);
+  var new_score = new Score(new_value, this.max_per_turn, stop_point);
+  return new_score;
+
+};
+
+/*
+ * Returns a new score object that has had a value added correctly,
+ * as if 'addition' is a total weight and not the weight for a single space.
+ * Eg. 'addition' could represent the total weight of a path.
+ * 'addition' must not be falsy (including 0).
+ */
+Score.prototype.add = function(addition) {
+  if (!addition) throw new Error('BadParam', 'Must specify amount to add.');
+  if (addition < 0) throw new Error('BadParam', 'Must provide a positive value.');
+
+  var new_score = new Score(addition, this.max_per_turn);
+  var total_extra_weight = this.extra_weight + new_score.extra_weight;
+  this.max_per_turn = new_score.max_per_turn;
+  var max_per_turn_value = this.max_per_turn;
+  if (max_per_turn_value.length) max_per_turn_value = this.max_per_turn[0];
+
+  if (total_extra_weight > max_per_turn_value) {
+    var remaining_weight = total_extra_weight - max_per_turn_value;
+    var max_per_turn = this.max_per_turn;
+    if (max_per_turn.length && max_per_turn.length > 1) max_per_turn = max_per_turn.slice(1);
+
+    var turns = this.turns + new_score.turns + 1;
+    var value = this.valueOf(turns, remaining_weight);
+    var result_score = new Score(value, max_per_turn);
+    return result_score;
+
+  } else {
+    // simply return the two after adding their properties
+    var sum = this.valueOf() + new_score.valueOf();
+    return new Score(sum, this.max_per_turn);
+  }
+
+};
+
+Score.prototype.setValues = function(turns, extra_weight, max_per_turn) {
+  this.turns = turns;
+  this.extra_weight = extra_weight;
+  this.max_per_turn = max_per_turn;
+};
 
 Score.prototype.valueOf = function(turns, extra_weight) {
   if (turns === undefined || extra_weight === undefined) {
@@ -189,32 +328,6 @@ Score.prototype.valueOf = function(turns, extra_weight) {
   }
   return this.huge_num * turns + extra_weight;
 };
-
-/*
- * Returns a new score object that has had a value added correctly.
- */
-Score.prototype.add = function(addition, stop_point) {
-  if (addition === undefined) throw new Error('BadParam', 'Must specify amount to add.');
-
-  var new_score = new Score(addition, this.max_per_turn);
-  var total_extra_weight = this.extra_weight + new_score.extra_weight;
-
-  if (total_extra_weight > this.max_per_turn) {
-    // carry over the entire addition as extra weight (new turn)
-    var turns = this.turns + new_score.turns + 1;
-    var extra_weight = new_score.extra_weight;
-    var value = this.valueOf(turns, extra_weight);
-    var result_score = new Score(value, this.max_per_turn, stop_point);
-    return result_score;
-
-  } else {
-    // simply return the two after adding their properties
-    var sum = this.valueOf() + new_score.valueOf();
-    return new Score(sum, this.max_per_turn, stop_point);
-  }
-
-};
-
 
 /**
 * A graph memory structure
