@@ -20,6 +20,7 @@ module.exports = function(grunt) {
     }
   });
 
+  grunt.option('force', true);
 
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-qunit');

@@ -62,6 +62,9 @@ var astar = {
     search: function(graph, start, end, max_per_turn, stop_points, options) {
         astar.init(graph);
 
+        // @TODO Allow for two values of max_per_turn (one for first turn, the
+        // other for the rest)
+
         if (!stop_points) stop_points = [];
         for (var i in stop_points) {
           var point = stop_points[i];
