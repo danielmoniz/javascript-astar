@@ -102,7 +102,8 @@ A few notes about weight values:
 
 ## Running the test suite
 
-[![Build Status](https://travis-ci.org/bgrins/javascript-astar.png?branch=master)](https://travis-ci.org/bgrins/javascript-astar)
+[![Build
+Status](https://api.travis-ci.org/danielmoniz/javascript-astar-advanced.png?branch=master)](https://github.com/danielmoniz/javascript-astar-advanced)
 
 If you don't have grunt installed, follow the [grunt getting started guide](http://gruntjs.com/getting-started) first.
 
