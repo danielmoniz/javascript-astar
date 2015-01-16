@@ -317,8 +317,6 @@ test( "Score (comparisons)", function() {
 
   var score1 = new Score(3, 5);
   var score2 = new Score(3, 5);
-  window.testing1 = true;
-  window.testing1 = false;
   ok(score1 != score2, 'scores of equal inputs are not equal by comparison');
 
   var score1 = new Score(3, 5);
@@ -708,8 +706,8 @@ test('Find reachable locations', function() {
       [2,1],
   ], [0,0], 5);
 
-  ok(resultConsistsOf([[0,0]], result.result), 
-    'Returns only the start location if no other nodes can be reached');
+  ok(resultConsistsOf([], result.result), 
+    'Returns an empty list if no other nodes can be reached');
 
   var result = runReachable([
       [0,1],
@@ -717,7 +715,7 @@ test('Find reachable locations', function() {
       [2,1],
   ], [0,0], 5);
 
-  ok(resultConsistsOf([[0,0], [0,1], [1,0], [1,1], [2,0], [2,1]], result.result), 
+  ok(resultConsistsOf([[0,1], [1,0], [1,1], [2,0], [2,1]], result.result), 
     'Can reach location that (from the most direct path) looks as if it cannot be reached');
 
   var result = runReachable([
@@ -727,7 +725,7 @@ test('Find reachable locations', function() {
       [1,1,1,1]
   ], [0,0], 2);
 
-  ok(resultConsistsOf([[0,0], [0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
     'Cannot reach locations that out of movement range');
 
   var result = runReachable([
@@ -736,7 +734,7 @@ test('Find reachable locations', function() {
       [3,1],
   ], [0,0], 5);
 
-  ok(resultConsistsOf([[0,0], [0,1], [1,0], [1,1], [2,1]], result.result),
+  ok(resultConsistsOf([[0,1], [1,0], [1,1], [2,1]], result.result),
     'Cannot reach location that is 1 movement away from being reached');
 
   var stop_points = [{ x:0, y:1 }, { x:1, y:0 },];
@@ -746,8 +744,28 @@ test('Find reachable locations', function() {
       [1,1,1],
   ], [0,0], 5, stop_points);
 
-  ok(resultConsistsOf([[0,0], [0,1], [1,0]], result.result),
+  ok(resultConsistsOf([[0,1], [1,0]], result.result),
     'Cannot reach locations that are past stop points');
+
+  var stop_points = getStopPointsFromPairs([[0,2], [2,0]]);
+  var result = runReachable([
+      [0,1,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], 5, stop_points);
+
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
+    'Can move before a stop point but cannot move past it');
+
+  var stop_points = [{ x: 0, y: 0 }];
+  var result = runReachable([
+      [0,1,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], 2, stop_points);
+
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
+    'Can reach other spaces when starting on a stop point');
 
   var turns = 2;
   var result = runReachable([
@@ -757,7 +775,7 @@ test('Find reachable locations', function() {
       [2,2,2,2]
   ], [0,0], 2, [], turns);
 
-  ok(resultConsistsOf([[0,0], [0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
     'Passing in a higher turns value calculates reachable locations in that many turns');
 
   var stop_points = getStopPointsFromPairs([[0,1], [0,2], [1,0], [2,0]]);
@@ -768,7 +786,7 @@ test('Find reachable locations', function() {
       [1,1,1],
   ], [0,0], 5, stop_points, turns);
 
-  ok(resultConsistsOf([[0,0], [0,1], [0,2], [1,0], [2,0]], result.result),
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
     'With turns > 1, can hit multiple stop points');
 
 });
@@ -783,7 +801,13 @@ function getStopPointsFromPairs(pairs) {
 }
 
 function resultConsistsOf(node_list, array) {
-  if (node_list.length != array.length) return false;
+  if (node_list.length != array.length) {
+      console.log("node_list");
+      console.log(node_list);
+      console.log("array");
+      console.log(array);
+    return false;
+  }
   for (var i in node_list) {
     if (!nodeInResult(node_list[i], array)) {
       console.log("node_list");

@@ -78,7 +78,7 @@ var astar = {
             // Normal case -- move currentNode from open to closed, process each of its neighbors.
             currentNode.closed = true;
 
-            reachable.push(currentNode);
+            if (currentNode != start) reachable.push(currentNode);
 
             // Find all neighbors for the current node.
             var neighbors = graph.neighbors(currentNode);
@@ -94,7 +94,11 @@ var astar = {
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
                 if (currentNode.g == 0) {
-                  currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
+                  if (currentNode == start) {
+                    currentNode.g = new Score(0, max_per_turn);
+                  } else {
+                    currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
+                  }
                 }
                 var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stop_point),
                     beenVisited = neighbor.visited;
@@ -186,7 +190,11 @@ var astar = {
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
                 if (currentNode.g == 0) {
-                  currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
+                  if (currentNode == start) {
+                    currentNode.g = new Score(0, max_per_turn);
+                  } else {
+                    currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
+                  }
                 }
                 var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stop_point),
                     beenVisited = neighbor.visited;
