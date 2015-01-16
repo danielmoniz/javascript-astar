@@ -1,7 +1,6 @@
 
 /* global Graph, astar, ok, test, equal */
 
-
 test( "Sanity Checks", function() {
   ok (typeof Graph !== "undefined", "Graph exists");
   ok (typeof astar !== "undefined", "Astar exists");
@@ -702,6 +701,111 @@ test( "GPS Pathfinding", function() {
   equal(result[2].name, "Cannes", "City #3 is Cannes");
 });
 
+test('Find reachable locations', function() {
+  var result = runReachable([
+      [0,0],
+      [0,1],
+      [2,1],
+  ], [0,0], 5);
+
+  ok(resultConsistsOf([[0,0]], result.result), 
+    'Returns only the start location if no other nodes can be reached');
+
+  var result = runReachable([
+      [0,1],
+      [4,1],
+      [2,1],
+  ], [0,0], 5);
+
+  ok(resultConsistsOf([[0,0], [0,1], [1,0], [1,1], [2,0], [2,1]], result.result), 
+    'Can reach location that (from the most direct path) looks as if it cannot be reached');
+
+  var result = runReachable([
+      [0,1,1,1],
+      [1,1,1,1],
+      [1,1,1,1],
+      [1,1,1,1]
+  ], [0,0], 2);
+
+  ok(resultConsistsOf([[0,0], [0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
+    'Cannot reach locations that out of movement range');
+
+  var result = runReachable([
+      [0,1],
+      [4,1],
+      [3,1],
+  ], [0,0], 5);
+
+  ok(resultConsistsOf([[0,0], [0,1], [1,0], [1,1], [2,1]], result.result),
+    'Cannot reach location that is 1 movement away from being reached');
+
+  var stop_points = [{ x:0, y:1 }, { x:1, y:0 },];
+  var result = runReachable([
+      [0,1,1],
+      [1,1,1],
+      [1,1,1],
+  ], [0,0], 5, stop_points);
+
+  ok(resultConsistsOf([[0,0], [0,1], [1,0]], result.result),
+    'Cannot reach locations that are past stop points');
+
+  var turns = 2;
+  var result = runReachable([
+      [0,2,2,2],
+      [2,2,2,2],
+      [2,2,2,2],
+      [2,2,2,2]
+  ], [0,0], 2, [], turns);
+
+  ok(resultConsistsOf([[0,0], [0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
+    'Passing in a higher turns value calculates reachable locations in that many turns');
+
+  var stop_points = getStopPointsFromPairs([[0,1], [0,2], [1,0], [2,0]]);
+  var turns = 2;
+  var result = runReachable([
+      [0,1,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], 5, stop_points, turns);
+
+  ok(resultConsistsOf([[0,0], [0,1], [0,2], [1,0], [2,0]], result.result),
+    'With turns > 1, can hit multiple stop points');
+
+});
+
+function getStopPointsFromPairs(pairs) {
+  var stop_points = [];
+  for (var i in pairs) {
+    var stop_point = { x: pairs[i][0], y: pairs[i][1] };
+    stop_points.push(stop_point);
+  }
+  return stop_points;
+}
+
+function resultConsistsOf(node_list, array) {
+  if (node_list.length != array.length) return false;
+  for (var i in node_list) {
+    if (!nodeInResult(node_list[i], array)) {
+      console.log("node_list");
+      console.log(node_list);
+      console.log("array");
+      console.log(array);
+      return false;
+    }
+  }
+  return true;
+}
+
+function nodeInResult(pair, array) {
+  for (var i in array) {
+    if (pair[0] == array[i].x && pair[1] == array[i].y) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function runSearch(graph, start, end, max_per_turn, stop_points, options) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
@@ -710,6 +814,21 @@ function runSearch(graph, start, end, max_per_turn, stop_points, options) {
   end = graph.grid[end[0]][end[1]];
   var sTime = new Date(),
     result = astar.search(graph, start, end, max_per_turn, stop_points, options),
+    eTime = new Date();
+  return {
+    result: result,
+    text: pathToString(result),
+    time: (eTime - sTime)
+  };
+}
+
+function runReachable(graph, start, max_per_turn, stop_points, turns) {
+  if (!(graph instanceof Graph)) {
+    graph = new Graph(graph);
+  }
+  start = graph.grid[start[0]][start[1]];
+  var sTime = new Date(),
+    result = astar.findReachablePoints(graph, start, max_per_turn, stop_points, turns),
     eTime = new Date();
   return {
     result: result,
