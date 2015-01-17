@@ -393,6 +393,30 @@ test('Find reachable locations', function() {
   ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
     'With turns > 1, can hit multiple stop points');
 
+  var stop_points = [];
+  var turns = 1;
+  var max_per_turn = [3, 2];
+  var result = runReachable([
+      [0,0,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], max_per_turn, stop_points, turns);
+
+  ok(resultConsistsOf([[1,0], [2,0], [2,1]], result.result),
+    'Calculates one turn-reachable locations based on only the first value of a complex max_per_turn value');
+
+  var stop_points = [];
+  var turns = 2;
+  var max_per_turn = [3, 2];
+  var result = runReachable([
+      [0,0,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], max_per_turn, stop_points, turns);
+
+  ok(resultConsistsOf([[1,0], [2,0], [2,1], [2,2], [1,2]], result.result),
+    'Calculates two turn-reachable locations based on the first two values of a complex max_per_turn value');
+
 });
 
 test( "Score (creation)", function() {

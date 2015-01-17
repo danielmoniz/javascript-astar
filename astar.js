@@ -48,6 +48,19 @@ var astar = {
         }
     },
 
+    /**
+    * Perform an A* Search on a graph given a start node.
+    * Finds all reachable locations from the start point given a max_per_turn
+    * value and a number of allowed turns.
+    * Note: This function is currently limited to orthogonal (non-diagonal)
+    * movement only.
+    * @param {Graph} graph
+    * @param {GridNode} start
+    * @param {Array} max_per_turn The maximum movement per turn allowed by the
+    * entity.
+    * @param {Array} stop_points A list of points at which the entity must
+    * stop for the turn.
+    */
     findReachablePoints: function(graph, start, max_per_turn, stop_points, turns) {
         astar.init(graph);
 
@@ -133,6 +146,10 @@ var astar = {
     * @param {Graph} graph
     * @param {GridNode} start
     * @param {GridNode} end
+    * @param {Array} max_per_turn The maximum movement per turn allowed by the
+    * entity.
+    * @param {Array} stop_points A list of points at which the entity must
+    * stop for the turn.
     * @param {Object} [options]
     * @param {bool} [options.closest] Specifies whether to return the
                path to the closest node if the target is unreachable.
