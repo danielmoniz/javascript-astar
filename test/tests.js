@@ -174,6 +174,227 @@ test( "Pathfinding with variable max_per_turn", function() {
 
 });
 
+test( "Diagonal Pathfinding", function() {
+  var graph = new Graph([
+      [1,1,1,1],
+      [0,1,1,0],
+      [0,0,1,1]
+  ], { diagonal: true});
+  var result1 = runSearch(graph, [0,0], [2,3]);
+
+  equal (result1.text, "(1,1)(2,2)(2,3)", "Result is expected");
+});
+
+test( "Pathfinding to closest", function() {
+  var result1 = runSearch([
+      [1,1,1,1],
+      [0,1,1,0],
+      [0,0,1,1]
+  ], [0,0], [2,1], undefined, [], {closest: true});
+
+  equal (result1.text, "(0,1)(1,1)", "Result is expected - pathed to closest node");
+
+  var result2 = runSearch([
+      [1,0,1,1],
+      [0,1,1,0],
+      [0,0,1,1]
+  ], [0,0], [2,1], undefined, [], {closest: true});
+
+  equal (result2.text, "", "Result is expected - start node was closest node");
+
+  var result3 = runSearch([
+      [1,1,1,1],
+      [0,1,1,0],
+      [0,1,1,1]
+  ], [0,0], [2,1], undefined, [], {closest: true});
+
+  equal (result3.text, "(0,1)(1,1)(2,1)", "Result is expected - target node was reachable");
+});
+
+test( "GPS Pathfinding", function() {
+  var data = [
+    {name: "Paris", lat: 48.8567, lng: 2.3508},
+    {name: "Lyon", lat: 45.76, lng: 4.84},
+    {name: "Marseille", lat: 43.2964, lng: 5.37},
+    {name: "Bordeaux", lat: 44.84, lng: -0.58},
+    {name: "Cannes", lat: 43.5513, lng: 7.0128},
+    {name: "Toulouse", lat: 43.6045, lng: 1.444},
+    {name: "Reims", lat: 49.2628, lng: 4.0347}
+  ],
+  links = {
+    "Paris": ["Lyon", "Bordeaux", "Reims"],
+    "Lyon": ["Paris", "Marseille"],
+    "Marseille": ["Lyon", "Cannes", "Toulouse"],
+    "Bordeaux": ["Toulouse", "Paris"],
+    "Cannes": ["Marseille"],
+    "Toulouse": ["Marseille", "Bordeaux"],
+    "Reims": ["Paris"]
+  };
+
+  function CityGraph(data, links) {
+    this.nodes = [];
+    this.links = links;
+    this.cities = {};
+
+    for (var i = 0; i < data.length; ++i) {
+      var city = data[i],
+          obj = new CityNode(city.name, city.lat, city.lng);
+
+      if (this.nodes.indexOf(obj) == -1) {
+          this.nodes.push(obj);
+      }
+
+      this.cities[obj.name] = obj;
+    }
+  }
+
+  CityGraph.prototype.neighbors = function (node) {
+    var neighbors = [],
+        ids = this.links[node.name];
+    for (var i = 0, len = ids.length; i < len; ++i) {
+      var name = ids[i],
+          neighbor = this.cities[name];
+      neighbors.push(neighbor);
+    }
+    return neighbors;
+  };
+
+  function CityNode(name, lat, lng) {
+    this.name = name;
+    this.lat = lat;
+    this.lng = lng;
+    this.longRad = this.lng * Math.PI / 180;
+    this.latRad = this.lat * Math.PI / 180;
+  }
+  CityNode.prototype.weight = 1;
+  CityNode.prototype.toString = function() {
+      return "[" + this.name + " (" + this.lat + ", " + this.lng + ")]";
+  };
+  CityNode.prototype.isWall = function() {
+      return this.weight === 0;
+  };
+  // Heuristic function
+  CityNode.prototype.GPS_distance = function(city) {
+      var x = (city.longRad - this.longRad) * Math.cos((this.latRad + city.latRad)/2),
+          y = city.latRad - this.latRad,
+          res = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) * 6371;
+      return res;
+  };
+  // Real cost function
+  CityNode.prototype.getCost = function(city) {
+    // Re-use heuristic function for now
+    // TODO: Determine the real distance between cities (from another data set)
+    return this.GPS_distance(city);
+  };
+
+  var graph = new CityGraph(data, links);
+
+  var start = graph.cities["Paris"],
+      end = graph.cities["Cannes"];
+
+  var GPSheuristic = function(node0, node1) {
+    return node0.GPS_distance(node1);
+  };
+
+  var result = astar.search(graph, start, end, undefined, [], {heuristic: GPSheuristic});
+  equal(result.length, 3, "Cannes is 3 cities away from Paris");
+  equal(result[0].name, "Lyon", "City #1 is Lyon");
+  equal(result[1].name, "Marseille", "City #2 is Marseille");
+  equal(result[2].name, "Cannes", "City #3 is Cannes");
+});
+
+test('Find reachable locations', function() {
+  var result = runReachable([
+      [0,0],
+      [0,1],
+      [2,1],
+  ], [0,0], 5);
+
+  ok(resultConsistsOf([], result.result), 
+    'Returns an empty list if no other nodes can be reached');
+
+  var result = runReachable([
+      [0,1],
+      [4,1],
+      [2,1],
+  ], [0,0], 5);
+
+  ok(resultConsistsOf([[0,1], [1,0], [1,1], [2,0], [2,1]], result.result), 
+    'Can reach location that (from the most direct path) looks as if it cannot be reached');
+
+  var result = runReachable([
+      [0,1,1,1],
+      [1,1,1,1],
+      [1,1,1,1],
+      [1,1,1,1]
+  ], [0,0], 2);
+
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
+    'Cannot reach locations that out of movement range');
+
+  var result = runReachable([
+      [0,1],
+      [4,1],
+      [3,1],
+  ], [0,0], 5);
+
+  ok(resultConsistsOf([[0,1], [1,0], [1,1], [2,1]], result.result),
+    'Cannot reach location that is 1 movement away from being reached');
+
+  var stop_points = [{ x:0, y:1 }, { x:1, y:0 },];
+  var result = runReachable([
+      [0,1,1],
+      [1,1,1],
+      [1,1,1],
+  ], [0,0], 5, stop_points);
+
+  ok(resultConsistsOf([[0,1], [1,0]], result.result),
+    'Cannot reach locations that are past stop points');
+
+  var stop_points = getStopPointsFromPairs([[0,2], [2,0]]);
+  var result = runReachable([
+      [0,1,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], 5, stop_points);
+
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
+    'Can move before a stop point but cannot move past it');
+
+  var stop_points = [{ x: 0, y: 0 }];
+  var result = runReachable([
+      [0,1,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], 2, stop_points);
+
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
+    'Can reach other spaces when starting on a stop point');
+
+  var turns = 2;
+  var result = runReachable([
+      [0,2,2,2],
+      [2,2,2,2],
+      [2,2,2,2],
+      [2,2,2,2]
+  ], [0,0], 2, [], turns);
+
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
+    'Passing in a higher turns value calculates reachable locations in that many turns');
+
+  var stop_points = getStopPointsFromPairs([[0,1], [0,2], [1,0], [2,0]]);
+  var turns = 2;
+  var result = runReachable([
+      [0,1,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], 5, stop_points, turns);
+
+  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
+    'With turns > 1, can hit multiple stop points');
+
+});
+
 test( "Score (creation)", function() {
 
   var score = new Score(3, 0);
@@ -567,227 +788,6 @@ test( "Score.addSingleSpace()", function() {
   throws(function() {
     var score2 = score1.addSingleSpace(new Score(1));
   }, Error('BadParam'), "Passing a Score as the 'addition' parameter throws an error");
-
-});
-
-test( "Diagonal Pathfinding", function() {
-  var graph = new Graph([
-      [1,1,1,1],
-      [0,1,1,0],
-      [0,0,1,1]
-  ], { diagonal: true});
-  var result1 = runSearch(graph, [0,0], [2,3]);
-
-  equal (result1.text, "(1,1)(2,2)(2,3)", "Result is expected");
-});
-
-test( "Pathfinding to closest", function() {
-  var result1 = runSearch([
-      [1,1,1,1],
-      [0,1,1,0],
-      [0,0,1,1]
-  ], [0,0], [2,1], undefined, [], {closest: true});
-
-  equal (result1.text, "(0,1)(1,1)", "Result is expected - pathed to closest node");
-
-  var result2 = runSearch([
-      [1,0,1,1],
-      [0,1,1,0],
-      [0,0,1,1]
-  ], [0,0], [2,1], undefined, [], {closest: true});
-
-  equal (result2.text, "", "Result is expected - start node was closest node");
-
-  var result3 = runSearch([
-      [1,1,1,1],
-      [0,1,1,0],
-      [0,1,1,1]
-  ], [0,0], [2,1], undefined, [], {closest: true});
-
-  equal (result3.text, "(0,1)(1,1)(2,1)", "Result is expected - target node was reachable");
-});
-
-test( "GPS Pathfinding", function() {
-  var data = [
-    {name: "Paris", lat: 48.8567, lng: 2.3508},
-    {name: "Lyon", lat: 45.76, lng: 4.84},
-    {name: "Marseille", lat: 43.2964, lng: 5.37},
-    {name: "Bordeaux", lat: 44.84, lng: -0.58},
-    {name: "Cannes", lat: 43.5513, lng: 7.0128},
-    {name: "Toulouse", lat: 43.6045, lng: 1.444},
-    {name: "Reims", lat: 49.2628, lng: 4.0347}
-  ],
-  links = {
-    "Paris": ["Lyon", "Bordeaux", "Reims"],
-    "Lyon": ["Paris", "Marseille"],
-    "Marseille": ["Lyon", "Cannes", "Toulouse"],
-    "Bordeaux": ["Toulouse", "Paris"],
-    "Cannes": ["Marseille"],
-    "Toulouse": ["Marseille", "Bordeaux"],
-    "Reims": ["Paris"]
-  };
-
-  function CityGraph(data, links) {
-    this.nodes = [];
-    this.links = links;
-    this.cities = {};
-
-    for (var i = 0; i < data.length; ++i) {
-      var city = data[i],
-          obj = new CityNode(city.name, city.lat, city.lng);
-
-      if (this.nodes.indexOf(obj) == -1) {
-          this.nodes.push(obj);
-      }
-
-      this.cities[obj.name] = obj;
-    }
-  }
-
-  CityGraph.prototype.neighbors = function (node) {
-    var neighbors = [],
-        ids = this.links[node.name];
-    for (var i = 0, len = ids.length; i < len; ++i) {
-      var name = ids[i],
-          neighbor = this.cities[name];
-      neighbors.push(neighbor);
-    }
-    return neighbors;
-  };
-
-  function CityNode(name, lat, lng) {
-    this.name = name;
-    this.lat = lat;
-    this.lng = lng;
-    this.longRad = this.lng * Math.PI / 180;
-    this.latRad = this.lat * Math.PI / 180;
-  }
-  CityNode.prototype.weight = 1;
-  CityNode.prototype.toString = function() {
-      return "[" + this.name + " (" + this.lat + ", " + this.lng + ")]";
-  };
-  CityNode.prototype.isWall = function() {
-      return this.weight === 0;
-  };
-  // Heuristic function
-  CityNode.prototype.GPS_distance = function(city) {
-      var x = (city.longRad - this.longRad) * Math.cos((this.latRad + city.latRad)/2),
-          y = city.latRad - this.latRad,
-          res = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) * 6371;
-      return res;
-  };
-  // Real cost function
-  CityNode.prototype.getCost = function(city) {
-    // Re-use heuristic function for now
-    // TODO: Determine the real distance between cities (from another data set)
-    return this.GPS_distance(city);
-  };
-
-  var graph = new CityGraph(data, links);
-
-  var start = graph.cities["Paris"],
-      end = graph.cities["Cannes"];
-
-  var GPSheuristic = function(node0, node1) {
-    return node0.GPS_distance(node1);
-  };
-
-  var result = astar.search(graph, start, end, undefined, [], {heuristic: GPSheuristic});
-  equal(result.length, 3, "Cannes is 3 cities away from Paris");
-  equal(result[0].name, "Lyon", "City #1 is Lyon");
-  equal(result[1].name, "Marseille", "City #2 is Marseille");
-  equal(result[2].name, "Cannes", "City #3 is Cannes");
-});
-
-test('Find reachable locations', function() {
-  var result = runReachable([
-      [0,0],
-      [0,1],
-      [2,1],
-  ], [0,0], 5);
-
-  ok(resultConsistsOf([], result.result), 
-    'Returns an empty list if no other nodes can be reached');
-
-  var result = runReachable([
-      [0,1],
-      [4,1],
-      [2,1],
-  ], [0,0], 5);
-
-  ok(resultConsistsOf([[0,1], [1,0], [1,1], [2,0], [2,1]], result.result), 
-    'Can reach location that (from the most direct path) looks as if it cannot be reached');
-
-  var result = runReachable([
-      [0,1,1,1],
-      [1,1,1,1],
-      [1,1,1,1],
-      [1,1,1,1]
-  ], [0,0], 2);
-
-  ok(resultConsistsOf([[0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
-    'Cannot reach locations that out of movement range');
-
-  var result = runReachable([
-      [0,1],
-      [4,1],
-      [3,1],
-  ], [0,0], 5);
-
-  ok(resultConsistsOf([[0,1], [1,0], [1,1], [2,1]], result.result),
-    'Cannot reach location that is 1 movement away from being reached');
-
-  var stop_points = [{ x:0, y:1 }, { x:1, y:0 },];
-  var result = runReachable([
-      [0,1,1],
-      [1,1,1],
-      [1,1,1],
-  ], [0,0], 5, stop_points);
-
-  ok(resultConsistsOf([[0,1], [1,0]], result.result),
-    'Cannot reach locations that are past stop points');
-
-  var stop_points = getStopPointsFromPairs([[0,2], [2,0]]);
-  var result = runReachable([
-      [0,1,1],
-      [1,0,1],
-      [1,1,1],
-  ], [0,0], 5, stop_points);
-
-  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
-    'Can move before a stop point but cannot move past it');
-
-  var stop_points = [{ x: 0, y: 0 }];
-  var result = runReachable([
-      [0,1,1],
-      [1,0,1],
-      [1,1,1],
-  ], [0,0], 2, stop_points);
-
-  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
-    'Can reach other spaces when starting on a stop point');
-
-  var turns = 2;
-  var result = runReachable([
-      [0,2,2,2],
-      [2,2,2,2],
-      [2,2,2,2],
-      [2,2,2,2]
-  ], [0,0], 2, [], turns);
-
-  ok(resultConsistsOf([[0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
-    'Passing in a higher turns value calculates reachable locations in that many turns');
-
-  var stop_points = getStopPointsFromPairs([[0,1], [0,2], [1,0], [2,0]]);
-  var turns = 2;
-  var result = runReachable([
-      [0,1,1],
-      [1,0,1],
-      [1,1,1],
-  ], [0,0], 5, stop_points, turns);
-
-  ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
-    'With turns > 1, can hit multiple stop points');
 
 });
 

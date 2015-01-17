@@ -209,6 +209,7 @@ var astar = {
                     neighbor.h = neighbor.h || new Score(heuristic(neighbor, end), max_per_turn);
                     neighbor.g = gScore;
                     neighbor.f = neighbor.g.add(neighbor.h);
+                    //neighbor.turns = gScore.turns;
 
                     if (closest) {
                         // If the neighbour is closer than the current closestNode or if it's equally close but has
