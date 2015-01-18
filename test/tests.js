@@ -417,6 +417,41 @@ test('Find reachable locations', function() {
   ok(resultConsistsOf([[1,0], [2,0], [2,1], [2,2], [1,2]], result.result),
     'Calculates two turn-reachable locations based on the first two values of a complex max_per_turn value');
 
+  var stop_points = [];
+  var max_per_turn = 0;
+  var result = runReachable([
+      [0,0,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], max_per_turn, stop_points);
+
+  ok(resultConsistsOf([], result.result),
+    'Returns an empty list if max_per_turn is 0');
+
+  var stop_points = [];
+  var max_per_turn = [0, 1];
+  var turns = 2;
+  var result = runReachable([
+      [0,0,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], max_per_turn, stop_points, turns);
+
+  ok(resultConsistsOf([[1,0]], result.result),
+    'Skips first turn of movement if first max_per_turn value is 0');
+
+  var stop_points = [];
+  var max_per_turn = [1, 0];
+  var turns = 2;
+  var result = runReachable([
+      [0,0,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], max_per_turn, stop_points, turns);
+
+  ok(resultConsistsOf([[1,0]], result.result),
+    'Skips second turn of movement if second max_per_turn value is 0');
+
 });
 
 test( "Score (creation)", function() {

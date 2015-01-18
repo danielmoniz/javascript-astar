@@ -62,6 +62,7 @@ var astar = {
     * stop for the turn.
     */
     findReachablePoints: function(graph, start, max_per_turn, stop_points, turns) {
+        if (!max_per_turn) return [];
         astar.init(graph);
 
         if (!stop_points) stop_points = [];
@@ -78,10 +79,15 @@ var astar = {
         });
         openHeap.push(start);
 
+        // set a max_distance for comparing path lengths
         var max_distance = new Score(0, max_per_turn);
-        for (var i=0; i<turns; i++) {
-          max_distance = max_distance.addSingleSpace(1, 'stop point');
+        var extra_weight_value = max_per_turn;
+        if (max_per_turn.length >= turns - 1) {
+          extra_weight_value = max_per_turn[turns - 1];
+        } else if (max_per_turn.length < turns - 1) {
+          extra_weight_value = max_per_turn[max_per_turn.length - 1];
         }
+        max_distance.setValues(turns - 1, extra_weight_value, max_per_turn);
 
         while(openHeap.size() > 0) {
 
