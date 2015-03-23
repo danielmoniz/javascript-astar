@@ -212,13 +212,17 @@ var astar = {
 
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
+
                 if (currentNode.g == 0) {
                   if (currentNode == start) {
                     currentNode.g = new Score(0, max_per_turn);
                   } else {
                     currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
                   }
+                } else if (currentNode.g === undefined) {
+                  throw new Error('BadValue', 'currentNode.g cannot be undefined. Check that start node belongs to this graph.');
                 }
+
                 var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stop_point),
                     beenVisited = neighbor.visited;
 

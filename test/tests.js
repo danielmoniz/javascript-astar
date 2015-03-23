@@ -456,6 +456,9 @@ test('Find reachable locations', function() {
 
 test( "Score (creation)", function() {
 
+  var score = new Score(0, 0);
+  equal(score.valueOf(), 0, 'score value is equal to score input when max_per_turn is 0');
+
   var score = new Score(3, 0);
   equal(score.valueOf(), 3, 'score value is equal to score input when max_per_turn is 0');
 
