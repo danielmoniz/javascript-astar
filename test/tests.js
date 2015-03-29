@@ -174,6 +174,53 @@ test( "Pathfinding with variable max_per_turn", function() {
 
 });
 
+test( "Pathfinding with barriers", function() {
+
+  var graph = new Graph([
+      [0,3,3],
+      [1,0,3],
+      [1,1,1],
+  ]);
+
+  var barrier = { start: { x: 0, y: 0 }, blocked: { x: 1, y: 0 } };
+  var stop_points = [];
+  var max_per_turn = 10;
+
+  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points, [barrier]);
+  equal (result1.text, "(0,1)(0,2)(1,2)(2,2)", "Algorithm picks longer path to avoid barrier");
+
+  var graph = new Graph([
+      [0,3,3],
+      [1,0,3],
+      [1,1,1],
+  ]);
+
+  var barrier = { start: { x: 1, y: 0 }, blocked: { x: 0, y: 0 } };
+  var stop_points = [];
+  var max_per_turn = 10;
+
+  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points, [barrier]);
+  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "Algorithm ignores barrier in wrong direction");
+
+  var graph = new Graph([
+      [0,1,1],
+      [1,0,1],
+      [1,1,1],
+  ]);
+
+  var barriers = [
+    { start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 } },
+    { start: { x: 0, y: 0 }, blocked: { x: 1, y: 0 } },
+  ];
+  var stop_points = [];
+  var max_per_turn = 10;
+
+  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points, barriers);
+  equal (result1.text, "", "Algorithm is blocked by multiple barriers");
+
+
+});
+
 test( "Diagonal Pathfinding", function() {
   var graph = new Graph([
       [1,1,1,1],
@@ -190,7 +237,7 @@ test( "Pathfinding to closest", function() {
       [1,1,1,1],
       [0,1,1,0],
       [0,0,1,1]
-  ], [0,0], [2,1], undefined, [], {closest: true});
+  ], [0,0], [2,1], undefined, [], [], {closest: true});
 
   equal (result1.text, "(0,1)(1,1)", "Result is expected - pathed to closest node");
 
@@ -198,7 +245,7 @@ test( "Pathfinding to closest", function() {
       [1,0,1,1],
       [0,1,1,0],
       [0,0,1,1]
-  ], [0,0], [2,1], undefined, [], {closest: true});
+  ], [0,0], [2,1], undefined, [], [], {closest: true});
 
   equal (result2.text, "", "Result is expected - start node was closest node");
 
@@ -206,7 +253,7 @@ test( "Pathfinding to closest", function() {
       [1,1,1,1],
       [0,1,1,0],
       [0,1,1,1]
-  ], [0,0], [2,1], undefined, [], {closest: true});
+  ], [0,0], [2,1], undefined, [], [], {closest: true});
 
   equal (result3.text, "(0,1)(1,1)(2,1)", "Result is expected - target node was reachable");
 });
@@ -296,7 +343,7 @@ test( "GPS Pathfinding", function() {
     return node0.GPS_distance(node1);
   };
 
-  var result = astar.search(graph, start, end, undefined, [], {heuristic: GPSheuristic});
+  var result = astar.search(graph, start, end, undefined, [], [], {heuristic: GPSheuristic});
   equal(result.length, 3, "Cannes is 3 cities away from Paris");
   equal(result[0].name, "Lyon", "City #1 is Lyon");
   equal(result[1].name, "Marseille", "City #2 is Marseille");
@@ -451,6 +498,68 @@ test('Find reachable locations', function() {
 
   ok(resultConsistsOf([[1,0]], result.result),
     'Skips second turn of movement if second max_per_turn value is 0');
+
+  var stop_points = [];
+  var max_per_turn = [1, 0];
+  var turns = 2;
+  var result = runReachable([
+      [0,0,1],
+      [1,0,1],
+      [1,1,1],
+  ], [0,0], max_per_turn, stop_points, turns, []);
+
+  ok(resultConsistsOf([[1,0]], result.result),
+    'Works as normal if barriers is specified as an empty list');
+
+  var barrier = {
+    start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 },
+  };
+  var stop_points = [];
+  var max_per_turn = 5;
+  var turns = 1;
+  var result = runReachable([
+      [0,1,1],
+      [5,0,1],
+      [5,5,1],
+  ], [0,0], max_per_turn, stop_points, turns, [barrier]);
+
+  ok(resultConsistsOf([[1,0]], result.result),
+    'Barrier limits the reachable tiles');
+
+  var barrier = {
+    start: { x: 0, y: 1 }, blocked: { x: 0, y: 0 },
+  };
+  var stop_points = [];
+  var max_per_turn = 5;
+  var turns = 1;
+  var result = runReachable([
+      [0,1,0],
+      [0,0,0],
+      [0,0,0],
+  ], [0,0], max_per_turn, stop_points, turns, [barrier]);
+
+  ok(resultConsistsOf([[0,1]], result.result),
+    'One-way barrier in wrong direction does not limit the reachable tiles');
+
+  var barriers = [
+    {
+      start: { x: 0, y: 1 }, blocked: { x: 0, y: 2 },
+    },
+    {
+      start: { x: 1, y: 0 }, blocked: { x: 2, y: 0 },
+    },
+  ]
+  var stop_points = [];
+  var max_per_turn = 5;
+  var turns = 1;
+  var result = runReachable([
+      [0,1,1],
+      [1,0,0],
+      [1,0,0],
+  ], [0,0], max_per_turn, stop_points, turns, barriers);
+
+  ok(resultConsistsOf([[0,1], [1,0]], result.result),
+    'Multiple barriers limit the reachable tiles');
 
 });
 
@@ -864,17 +973,17 @@ function getStopPointsFromPairs(pairs) {
 
 function resultConsistsOf(node_list, array) {
   if (node_list.length != array.length) {
-      console.log("node_list");
+      console.log("list should be:");
       console.log(node_list);
-      console.log("array");
+      console.log("list is:");
       console.log(array);
     return false;
   }
   for (var i in node_list) {
     if (!nodeInResult(node_list[i], array)) {
-      console.log("node_list");
+      console.log("list should be:");
       console.log(node_list);
-      console.log("array");
+      console.log("list is:");
       console.log(array);
       return false;
     }
@@ -892,14 +1001,14 @@ function nodeInResult(pair, array) {
   return false;
 }
 
-function runSearch(graph, start, end, max_per_turn, stop_points, options) {
+function runSearch(graph, start, end, max_per_turn, stop_points, barriers, options) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
   }
   start = graph.grid[start[0]][start[1]];
   end = graph.grid[end[0]][end[1]];
   var sTime = new Date(),
-    result = astar.search(graph, start, end, max_per_turn, stop_points, options),
+    result = astar.search(graph, start, end, max_per_turn, stop_points, barriers, options),
     eTime = new Date();
   return {
     result: result,
@@ -908,13 +1017,13 @@ function runSearch(graph, start, end, max_per_turn, stop_points, options) {
   };
 }
 
-function runReachable(graph, start, max_per_turn, stop_points, turns) {
+function runReachable(graph, start, max_per_turn, stop_points, turns, barriers) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
   }
   start = graph.grid[start[0]][start[1]];
   var sTime = new Date(),
-    result = astar.findReachablePoints(graph, start, max_per_turn, stop_points, turns),
+    result = astar.findReachablePoints(graph, start, max_per_turn, stop_points, turns, barriers),
     eTime = new Date();
   return {
     result: result,

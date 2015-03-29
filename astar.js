@@ -36,7 +36,7 @@ function getHeap() {
 }
 
 var astar = {
-    init: function(graph) {
+    init: function(graph, barriers) {
         for (var i = 0, len = graph.nodes.length; i < len; ++i) {
             var node = graph.nodes[i];
             node.f = 0;
@@ -46,6 +46,17 @@ var astar = {
             node.closed = false;
             node.parent = null;
         }
+
+        if (!barriers) return;
+        for (var i in barriers) {
+            var barrier = barriers[i];
+            var node = graph.grid[barrier.start.x][barrier.start.y];
+
+            if (node.barriers === undefined) node.barriers = [];
+            var adjacent_node = graph.grid[barrier.blocked.x][barrier.blocked.y];
+            node.barriers.push(adjacent_node);
+        }
+
     },
 
     /**
@@ -60,10 +71,20 @@ var astar = {
     * entity.
     * @param {Array} stop_points A list of points at which the entity must
     * stop for the turn.
+    * @param {integer} turns The number of turns allowed. Defaults to 1.
+    * Pathing will not return paths that require more than this number of
+    * turns.
+    * @param {Array} barriers A list of 'barriers' to which the algorithm must
+    * adhere. A barrier is a wall between two adjacent points that prevents
+    * pathing from one to the other. Barriers are uni-directional.
+    * Ie. A->B might be disallowed, but B->A is valid unless specified.
+    * Example barrier: { start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 } }
+    * This example prevents pathing from 'start' to 'blocked'.
     */
-    findReachablePoints: function(graph, start, max_per_turn, stop_points, turns) {
+    findReachablePoints: function(graph, start, max_per_turn, stop_points, turns, barriers) {
+
         if (!max_per_turn) return [];
-        astar.init(graph);
+        astar.init(graph, barriers);
 
         if (!stop_points) stop_points = [];
         if (!turns) turns = 1;
@@ -109,6 +130,11 @@ var astar = {
                     // Not a valid node to process, skip to next neighbor.
                     continue;
                 }
+
+                // Ignore neighbor if a barrier is in place
+                try {
+                  if (currentNode.barriers.indexOf(neighbor) > -1) continue;
+                } catch (error) {}
 
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
@@ -156,14 +182,20 @@ var astar = {
     * entity.
     * @param {Array} stop_points A list of points at which the entity must
     * stop for the turn.
+    * @param {Array} barriers A list of 'barriers' to which the algorithm must
+    * adhere. A barrier is a wall between two adjacent points that prevents
+    * pathing from one to the other. Barriers are uni-directional.
+    * Ie. A->B might be disallowed, but B->A is valid unless specified.
+    * Example barrier: { start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 } }
+    * This example prevents pathing from 'start' to 'blocked'.
     * @param {Object} [options]
     * @param {bool} [options.closest] Specifies whether to return the
                path to the closest node if the target is unreachable.
     * @param {Function} [options.heuristic] Heuristic function (see
     *          astar.heuristics).
     */
-    search: function(graph, start, end, max_per_turn, stop_points, options) {
-        astar.init(graph);
+    search: function(graph, start, end, max_per_turn, stop_points, barriers, options) {
+        astar.init(graph, barriers);
 
         if (!stop_points) stop_points = [];
         for (var i in stop_points) {
@@ -206,6 +238,11 @@ var astar = {
                     // Not a valid node to process, skip to next neighbor.
                     continue;
                 }
+
+                // Ignore neighbor if a barrier is in place
+                try {
+                  if (currentNode.barriers.indexOf(neighbor) > -1) continue;
+                } catch (error) {}
 
                 // @TODO Ensure nodes that are impossible to reach are removed
                 // (or waited for if they can be reached later)
@@ -265,6 +302,7 @@ var astar = {
         // No result was found - empty array signifies failure to find path.
         return [];
     },
+
     // See list of heuristics: http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
     heuristics: {
         manhattan: function(pos0, pos1) {
@@ -279,7 +317,8 @@ var astar = {
             var d2 = Math.abs(pos1.y - pos0.y);
             return (D * (d1 + d2)) + ((D2 - (2 * D)) * Math.min(d1, d2));
         }
-    }
+    },
+
 };
 
 /*
