@@ -53,23 +53,23 @@ var astar = {
             var node = graph.grid[barrier.start.x][barrier.start.y];
 
             if (node.barriers === undefined) node.barriers = [];
-            var adjacent_node = graph.grid[barrier.blocked.x][barrier.blocked.y];
-            node.barriers.push(adjacent_node);
+            var adjacentNode = graph.grid[barrier.blocked.x][barrier.blocked.y];
+            node.barriers.push(adjacentNode);
         }
 
     },
 
     /**
     * Perform an A* Search on a graph given a start node.
-    * Finds all reachable locations from the start point given a max_per_turn
+    * Finds all reachable locations from the start point given a maxPerTurn
     * value and a number of allowed turns.
     * Note: This function is currently limited to orthogonal (non-diagonal)
     * movement only.
     * @param {Graph} graph
     * @param {GridNode} start
-    * @param {Array} max_per_turn The maximum movement per turn allowed by the
+    * @param {Array} maxPerTurn The maximum movement per turn allowed by the
     * entity.
-    * @param {Array} stop_points A list of points at which the entity must
+    * @param {Array} stopPoints A list of points at which the entity must
     * stop for the turn.
     * @param {integer} turns The number of turns allowed. Defaults to 1.
     * Pathing will not return paths that require more than this number of
@@ -81,17 +81,17 @@ var astar = {
     * Example barrier: { start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 } }
     * This example prevents pathing from 'start' to 'blocked'.
     */
-    findReachablePoints: function(graph, start, max_per_turn, stop_points, turns, barriers) {
+    findReachablePoints: function(graph, start, maxPerTurn, stopPoints, turns, barriers) {
 
-        if (!max_per_turn) return [];
+        if (!maxPerTurn) return [];
         astar.init(graph, barriers);
 
-        if (!stop_points) stop_points = [];
+        if (!stopPoints) stopPoints = [];
         if (!turns) turns = 1;
-        for (var i in stop_points) {
-          var point = stop_points[i];
+        for (var i in stopPoints) {
+          var point = stopPoints[i];
           var node = graph.grid[point.x][point.y];
-          node.stop_point = true;
+          node.stopPoint = true;
         }
 
         var reachable = [];
@@ -100,15 +100,15 @@ var astar = {
         });
         openHeap.push(start);
 
-        // set a max_distance for comparing path lengths
-        var max_distance = new Score(0, max_per_turn);
-        var extra_weight_value = max_per_turn;
-        if (max_per_turn.length >= turns - 1) {
-          extra_weight_value = max_per_turn[turns - 1];
-        } else if (max_per_turn.length < turns - 1) {
-          extra_weight_value = max_per_turn[max_per_turn.length - 1];
+        // set a maxDistance for comparing path lengths
+        var maxDistance = new Score(0, maxPerTurn);
+        var extraWeightValue = maxPerTurn;
+        if (maxPerTurn.length >= turns - 1) {
+          extraWeightValue = maxPerTurn[turns - 1];
+        } else if (maxPerTurn.length < turns - 1) {
+          extraWeightValue = maxPerTurn[maxPerTurn.length - 1];
         }
-        max_distance.setValues(turns - 1, extra_weight_value, max_per_turn);
+        maxDistance.setValues(turns - 1, extraWeightValue, maxPerTurn);
 
         while(openHeap.size() > 0) {
 
@@ -140,16 +140,16 @@ var astar = {
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
                 if (currentNode.g == 0) {
                   if (currentNode == start) {
-                    currentNode.g = new Score(0, max_per_turn);
+                    currentNode.g = new Score(0, maxPerTurn);
                   } else {
-                    currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
+                    currentNode.g = new Score(0, maxPerTurn, currentNode.stopPoint);
                   }
                 }
-                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stop_point),
+                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stopPoint),
                     beenVisited = neighbor.visited;
 
                 if (gScore === false) continue;
-                if (gScore > max_distance) continue;
+                if (gScore > maxDistance) continue;
 
                 if (!beenVisited || gScore < neighbor.g) {
 
@@ -178,9 +178,9 @@ var astar = {
     * @param {Graph} graph
     * @param {GridNode} start
     * @param {GridNode} end
-    * @param {Array} max_per_turn The maximum movement per turn allowed by the
+    * @param {Array} maxPerTurn The maximum movement per turn allowed by the
     * entity.
-    * @param {Array} stop_points A list of points at which the entity must
+    * @param {Array} stopPoints A list of points at which the entity must
     * stop for the turn.
     * @param {Array} barriers A list of 'barriers' to which the algorithm must
     * adhere. A barrier is a wall between two adjacent points that prevents
@@ -194,14 +194,14 @@ var astar = {
     * @param {Function} [options.heuristic] Heuristic function (see
     *          astar.heuristics).
     */
-    search: function(graph, start, end, max_per_turn, stop_points, barriers, options) {
+    search: function(graph, start, end, maxPerTurn, stopPoints, barriers, options) {
         astar.init(graph, barriers);
 
-        if (!stop_points) stop_points = [];
-        for (var i in stop_points) {
-          var point = stop_points[i];
+        if (!stopPoints) stopPoints = [];
+        for (var i in stopPoints) {
+          var point = stopPoints[i];
           var node = graph.grid[point.x][point.y];
-          node.stop_point = true;
+          node.stopPoint = true;
         }
 
         options = options || {};
@@ -211,7 +211,7 @@ var astar = {
         var openHeap = getHeap(),
             closestNode = start; // set the start node to be the closest if required
 
-        start.h = new Score(heuristic(start, end), max_per_turn);
+        start.h = new Score(heuristic(start, end), maxPerTurn);
 
         openHeap.push(start);
 
@@ -252,15 +252,15 @@ var astar = {
 
                 if (currentNode.g == 0) {
                   if (currentNode == start) {
-                    currentNode.g = new Score(0, max_per_turn);
+                    currentNode.g = new Score(0, maxPerTurn);
                   } else {
-                    currentNode.g = new Score(0, max_per_turn, currentNode.stop_point);
+                    currentNode.g = new Score(0, maxPerTurn, currentNode.stopPoint);
                   }
                 } else if (currentNode.g === undefined) {
                   throw new Error('BadValue', 'currentNode.g cannot be undefined. Check that start node belongs to this graph.');
                 }
 
-                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stop_point),
+                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stopPoint),
                     beenVisited = neighbor.visited;
 
                 if (gScore === false) continue;
@@ -270,7 +270,7 @@ var astar = {
                     // Found an optimal (so far) path to this node.  Take score for node to see how good it is.
                     neighbor.visited = true;
                     neighbor.parent = currentNode;
-                    neighbor.h = neighbor.h || new Score(heuristic(neighbor, end), max_per_turn);
+                    neighbor.h = neighbor.h || new Score(heuristic(neighbor, end), maxPerTurn);
                     neighbor.g = gScore;
                     neighbor.f = neighbor.g.add(neighbor.h);
                     //neighbor.turns = gScore.turns;
@@ -327,70 +327,70 @@ var astar = {
  * before getting there.
  * Score objects use a large number to calculate their values. A higher turn
  * value always means a higher score, meaning that the path is less optimal.
- * Extra spaces required (extra_weight) are treated as tiebreakers.
+ * Extra spaces required (extraWeight) are treated as tiebreakers.
  *
  * Eg. the score (1, 3) represents 1 turn and 3 extra spaces to move there.
  * (1, 3) < (2, 1) < (2, 4)
  *
- * Specifically, (3, 5) evaluates to 3 * large_number + 5
+ * Specifically, (3, 5) evaluates to 3 * largeNumber + 5
  * If the large number is 1 million, then (3, 5) evaluates to 3000005 when
  * using valueOf() or comparison operators.
  * NOTE: Equality still represents object equality, not Score value equality.
  * So (1, 3) != (1, 3), even though they evaluate to the same number.
  * Always use valueOf() when comparing scores to values for equality.
  *
- * A max_per_turn of 0 implies that there is no max_per_turn, ie. treat the
- * pathing task as normal (without turns or stop_points).
+ * A maxPerTurn of 0 implies that there is no maxPerTurn, ie. treat the
+ * pathing task as normal (without turns or stopPoints).
  *
- * max_per_turn can be an array, eg. [3, 5], which represents movement limits
+ * maxPerTurn can be an array, eg. [3, 5], which represents movement limits
  * on different turns. The last value is used for any turns for which no
- * max_per_turn value was provided. Eg. one could move 3, then 5, then 5, 5,...
+ * maxPerTurn value was provided. Eg. one could move 3, then 5, then 5, 5,...
  *
  * See README for more information.
  */
-function Score(score, max_per_turn, stop_point) {
+function Score(score, maxPerTurn, stopPoint) {
   if ((typeof score != 'number' && typeof score != 'object') || score === undefined) {
     throw new Error('BadParam', 'score value must be a number or another score object.');
   }
 
-  this.huge_num = 1000000;
-  if (!max_per_turn) max_per_turn = this.huge_num;
-  this.max_per_turn = max_per_turn;
+  this.hugeNum = 1000000;
+  if (!maxPerTurn) maxPerTurn = this.hugeNum;
+  this.maxPerTurn = maxPerTurn;
 
-  var turns = Math.floor(score / this.huge_num);
-  var extra_weight = score % this.huge_num;
+  var turns = Math.floor(score / this.hugeNum);
+  var extraWeight = score % this.hugeNum;
 
-  if (typeof max_per_turn == 'object') {
-    var first_turn_max = max_per_turn[0];
-    var future_turns_max = max_per_turn[0];
-    if (max_per_turn.length > 1) {
-      var future_turns_max = max_per_turn.slice(1);
+  if (typeof maxPerTurn == 'object') {
+    var firstTurnMax = maxPerTurn[0];
+    var futureTurnsMax = maxPerTurn[0];
+    if (maxPerTurn.length > 1) {
+      var futureTurnsMax = maxPerTurn.slice(1);
     }
 
-    if (extra_weight > first_turn_max) {
+    if (extraWeight > firstTurnMax) {
       // can spend entire first turn on the extra weight available
-      extra_weight -= first_turn_max;
+      extraWeight -= firstTurnMax;
       turns += 1;
-      var value = this.valueOf(turns, extra_weight);
-      var new_score = new Score(value, future_turns_max, stop_point);
-      this.setValues(new_score.turns, new_score.extra_weight, future_turns_max);
+      var value = this.valueOf(turns, extraWeight);
+      var newScore = new Score(value, futureTurnsMax, stopPoint);
+      this.setValues(newScore.turns, newScore.extraWeight, futureTurnsMax);
       return;
 
     } else {
-      if (stop_point && extra_weight < first_turn_max) extra_weight = first_turn_max;
-      this.setValues(turns, extra_weight, max_per_turn);
+      if (stopPoint && extraWeight < firstTurnMax) extraWeight = firstTurnMax;
+      this.setValues(turns, extraWeight, maxPerTurn);
       return;
     }
 
     // otherwise, build score object as normal
-  } else if (typeof max_per_turn == 'number') {
-    var added_turns = Math.max(Math.ceil(extra_weight / max_per_turn), 1) - 1;
-    turns += added_turns;
-    extra_weight = extra_weight - added_turns * max_per_turn;
-    if (stop_point && extra_weight < max_per_turn) extra_weight = max_per_turn;
-    this.setValues(turns, extra_weight, this.max_per_turn);
+  } else if (typeof maxPerTurn == 'number') {
+    var addedTurns = Math.max(Math.ceil(extraWeight / maxPerTurn), 1) - 1;
+    turns += addedTurns;
+    extraWeight = extraWeight - addedTurns * maxPerTurn;
+    if (stopPoint && extraWeight < maxPerTurn) extraWeight = maxPerTurn;
+    this.setValues(turns, extraWeight, this.maxPerTurn);
   } else {
-    throw new Error('BadParam', 'max_per_turn must be an array or a number.');
+    throw new Error('BadParam', 'maxPerTurn must be an array or a number.');
   }
 
 }
@@ -400,36 +400,36 @@ function Score(score, max_per_turn, stop_point) {
  * as if 'addition' is the weight for a single space.
  * Will return false if movement to that space is impossible.
  */
-Score.prototype.addSingleSpace = function(addition, stop_point) {
+Score.prototype.addSingleSpace = function(addition, stopPoint) {
   if (typeof addition != 'number') throw new Error('BadParam', 'Must specify amount to add.');
 
-  var max_per_turn_value = this.max_per_turn;
-  if (max_per_turn_value.length) max_per_turn_value = this.max_per_turn[0];
+  var maxPerTurnValue = this.maxPerTurn;
+  if (maxPerTurnValue.length) maxPerTurnValue = this.maxPerTurn[0];
 
-  if (typeof this.max_per_turn == 'number' || (this.max_per_turn.length && this.max_per_turn.length <= 1)) {
+  if (typeof this.maxPerTurn == 'number' || (this.maxPerTurn.length && this.maxPerTurn.length <= 1)) {
     // do or die  - if addition is too high, move is impossible
-    if (addition > max_per_turn_value) {
+    if (addition > maxPerTurnValue) {
       return false;
     }
   }
 
-  if (addition + this.extra_weight > max_per_turn_value) {
-    var max_per_turn = this.max_per_turn;
-    if (max_per_turn.length && max_per_turn.length > 1) {
-      max_per_turn = max_per_turn.slice(1);
-    } else if (max_per_turn.length && max_per_turn.length <= 1) {
-      max_per_turn = max_per_turn[0];
+  if (addition + this.extraWeight > maxPerTurnValue) {
+    var maxPerTurn = this.maxPerTurn;
+    if (maxPerTurn.length && maxPerTurn.length > 1) {
+      maxPerTurn = maxPerTurn.slice(1);
+    } else if (maxPerTurn.length && maxPerTurn.length <= 1) {
+      maxPerTurn = maxPerTurn[0];
     }
-    var new_value = this.valueOf(this.turns + 1, 0);
-    var new_score = new Score(new_value, max_per_turn);
-    return new_score.addSingleSpace(addition, stop_point);
+    var newValue = this.valueOf(this.turns + 1, 0);
+    var newScore = new Score(newValue, maxPerTurn);
+    return newScore.addSingleSpace(addition, stopPoint);
 
   }
 
-  var extra_weight = this.extra_weight + addition;
-  var new_value = this.valueOf(this.turns, extra_weight);
-  var new_score = new Score(new_value, this.max_per_turn, stop_point);
-  return new_score;
+  var extraWeight = this.extraWeight + addition;
+  var newValue = this.valueOf(this.turns, extraWeight);
+  var newScore = new Score(newValue, this.maxPerTurn, stopPoint);
+  return newScore;
 
 };
 
@@ -443,41 +443,41 @@ Score.prototype.add = function(addition) {
   if (!addition) throw new Error('BadParam', 'Must specify amount to add.');
   if (addition < 0) throw new Error('BadParam', 'Must provide a positive value.');
 
-  var new_score = new Score(addition, this.max_per_turn);
-  var total_extra_weight = this.extra_weight + new_score.extra_weight;
-  this.max_per_turn = new_score.max_per_turn;
-  var max_per_turn_value = this.max_per_turn;
-  if (max_per_turn_value.length) max_per_turn_value = this.max_per_turn[0];
+  var newScore = new Score(addition, this.maxPerTurn);
+  var totalExtraWeight = this.extraWeight + newScore.extraWeight;
+  this.maxPerTurn = newScore.maxPerTurn;
+  var maxPerTurnValue = this.maxPerTurn;
+  if (maxPerTurnValue.length) maxPerTurnValue = this.maxPerTurn[0];
 
-  if (total_extra_weight > max_per_turn_value) {
-    var remaining_weight = total_extra_weight - max_per_turn_value;
-    var max_per_turn = this.max_per_turn;
-    if (max_per_turn.length && max_per_turn.length > 1) max_per_turn = max_per_turn.slice(1);
+  if (totalExtraWeight > maxPerTurnValue) {
+    var remainingWeight = totalExtraWeight - maxPerTurnValue;
+    var maxPerTurn = this.maxPerTurn;
+    if (maxPerTurn.length && maxPerTurn.length > 1) maxPerTurn = maxPerTurn.slice(1);
 
-    var turns = this.turns + new_score.turns + 1;
-    var value = this.valueOf(turns, remaining_weight);
-    var result_score = new Score(value, max_per_turn);
-    return result_score;
+    var turns = this.turns + newScore.turns + 1;
+    var value = this.valueOf(turns, remainingWeight);
+    var resultScore = new Score(value, maxPerTurn);
+    return resultScore;
 
   } else {
     // simply return the two after adding their properties
-    var sum = this.valueOf() + new_score.valueOf();
-    return new Score(sum, this.max_per_turn);
+    var sum = this.valueOf() + newScore.valueOf();
+    return new Score(sum, this.maxPerTurn);
   }
 
 };
 
-Score.prototype.setValues = function(turns, extra_weight, max_per_turn) {
+Score.prototype.setValues = function(turns, extraWeight, maxPerTurn) {
   this.turns = turns;
-  this.extra_weight = extra_weight;
-  this.max_per_turn = max_per_turn;
+  this.extraWeight = extraWeight;
+  this.maxPerTurn = maxPerTurn;
 };
 
-Score.prototype.valueOf = function(turns, extra_weight) {
-  if (turns === undefined || extra_weight === undefined) {
-    return this.huge_num * this.turns + this.extra_weight;
+Score.prototype.valueOf = function(turns, extraWeight) {
+  if (turns === undefined || extraWeight === undefined) {
+    return this.hugeNum * this.turns + this.extraWeight;
   }
-  return this.huge_num * turns + extra_weight;
+  return this.hugeNum * turns + extraWeight;
 };
 
 /**
@@ -572,11 +572,11 @@ Graph.prototype.toString = function() {
     return graphString.join("\n");
 };
 
-function GridNode(x, y, weight, stop_point) {
+function GridNode(x, y, weight, stopPoint) {
     this.x = x;
     this.y = y;
     this.weight = weight;
-    this.stop_point = stop_point ? true : false;
+    this.stopPoint = stopPoint ? true : false;
 }
 
 GridNode.prototype.toString = function() {
@@ -592,7 +592,7 @@ GridNode.prototype.isWall = function() {
 };
 
 GridNode.prototype.isStopPoint = function() {
-    return this.stop_point;
+    return this.stopPoint;
 };
 
 function BinaryHeap(scoreFunction){

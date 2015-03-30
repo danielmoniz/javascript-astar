@@ -59,8 +59,8 @@ test( "Pathfinding with stop points", function() {
       [1,1,0],
       [0,1,1]
   ]);
-  var stop_points = [{ x: 1, y: 0 }];
-  var result1 = runSearch(graph, [0,0], [2,2], 2, stop_points);
+  var stopPoints = [{ x: 1, y: 0 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 2, stopPoints);
   equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid stop point due to high movement value");
 
   var graph = new Graph([
@@ -68,8 +68,8 @@ test( "Pathfinding with stop points", function() {
       [1,1,0],
       [0,1,1]
   ]);
-  var stop_points = [{ x: 1, y: 0 }];
-  var result1 = runSearch(graph, [0,0], [2,2], 4, stop_points);
+  var stopPoints = [{ x: 1, y: 0 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 4, stopPoints);
   equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid stop point despite traversing a high weight.");
 
   var graph = new Graph([
@@ -77,8 +77,8 @@ test( "Pathfinding with stop points", function() {
       [1,1,0],
       [0,1,1]
   ]);
-  var stop_points = [{ x: 1, y: 0 }];
-  var result1 = runSearch(graph, [0,0], [2,2], 4, stop_points);
+  var stopPoints = [{ x: 1, y: 0 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 4, stopPoints);
   equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Use stop point due to overly high weights elsewhere.");
 
   var graph = new Graph([
@@ -86,8 +86,8 @@ test( "Pathfinding with stop points", function() {
       [1,1,0],
       [0,1,1]
   ]);
-  var stop_points = [{ x: 1, y: 0 }];
-  var result1 = runSearch(graph, [0,0], [2,2], 1, stop_points);
+  var stopPoints = [{ x: 1, y: 0 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 1, stopPoints);
   equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Use stop point due to low movement causing no effect.");
 
   var graph = new Graph([
@@ -95,70 +95,70 @@ test( "Pathfinding with stop points", function() {
       [5,0,1],
       [4,1,1]
   ]);
-  var stop_points = [{ x: 2, y: 1 }];
-  var result1 = runSearch(graph, [0,0], [2,2], 10, stop_points);
-  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "stop point is more efficient when it happens on the final movement point of max_per_turn");
+  var stopPoints = [{ x: 2, y: 1 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 10, stopPoints);
+  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "stop point is more efficient when it happens on the final movement point of maxPerTurn");
 
   var graph = new Graph([
       [1,10,4],
       [5,0,5],
       [5,1,1]
   ]);
-  var stop_points = [{ x: 2, y: 1 }];
-  var result1 = runSearch(graph, [0,0], [2,2], 10, stop_points);
+  var stopPoints = [{ x: 2, y: 1 }];
+  var result1 = runSearch(graph, [0,0], [2,2], 10, stopPoints);
   equal (result1.text, "(0,1)(0,2)(1,2)(2,2)", "stop point after full movement amount should jump turns value (2,1 vs 1,10)");
 
 });
 
-test( "Pathfinding with max_per_turn", function() {
+test( "Pathfinding with maxPerTurn", function() {
 
   var graph = new Graph([
       [0,5,6],
       [5,0,4],
       [4,2,2],
   ]);
-  var stop_points = [];
-  var max_per_turn = 4;
+  var stopPoints = [];
+  var maxPerTurn = 4;
 
-  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points);
-  equal (result1.text, "", "A graph made impossible through a low max_per_turn returns an empty list");
+  var result1 = runSearch(graph, [0,0], [2,2], maxPerTurn, stopPoints);
+  equal (result1.text, "", "A graph made impossible through a low maxPerTurn returns an empty list");
 
 });
 
-test( "Pathfinding with variable max_per_turn", function() {
+test( "Pathfinding with variable maxPerTurn", function() {
 
   var graph = new Graph([
       [0,5,3],
       [5,0,4],
       [3,2,2],
   ]);
-  var stop_points = [];
-  var max_per_turn = [5,2];
+  var stopPoints = [];
+  var maxPerTurn = [5,2];
 
-  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points);
-  equal (result1.text, "", "A graph made impossible through a low max_per_turn value returns an empty list");
-
-  var graph = new Graph([
-      [0,2,6],
-      [2,0,4],
-      [4,2,2],
-  ]);
-  var stop_points = [{ x: 1, y: 0 }];
-  var max_per_turn = [2, 8];
-
-  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points);
-  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "max_per_turn [2,8] does not act as [2,2] or [8,8]");
+  var result1 = runSearch(graph, [0,0], [2,2], maxPerTurn, stopPoints);
+  equal (result1.text, "", "A graph made impossible through a low maxPerTurn value returns an empty list");
 
   var graph = new Graph([
       [0,2,6],
       [2,0,4],
       [4,2,2],
   ]);
-  var stop_points = [{ x: 2, y: 1 }];
-  var max_per_turn = [8, 2];
+  var stopPoints = [{ x: 1, y: 0 }];
+  var maxPerTurn = [2, 8];
 
-  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points);
-  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "max_per_turn [8,2] does not act as [2,2] or [8,8]");
+  var result1 = runSearch(graph, [0,0], [2,2], maxPerTurn, stopPoints);
+  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "maxPerTurn [2,8] does not act as [2,2] or [8,8]");
+
+  var graph = new Graph([
+      [0,2,6],
+      [2,0,4],
+      [4,2,2],
+  ]);
+  var stopPoints = [{ x: 2, y: 1 }];
+  var maxPerTurn = [8, 2];
+
+  var result1 = runSearch(graph, [0,0], [2,2], maxPerTurn, stopPoints);
+  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "maxPerTurn [8,2] does not act as [2,2] or [8,8]");
 
   var graph = new Graph([
       [0,2,3],
@@ -166,11 +166,11 @@ test( "Pathfinding with variable max_per_turn", function() {
       [3,0,4],
       [4,2,1],
   ]);
-  var stop_points = [{ x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }];
-  var max_per_turn = [2, 3, 5];
+  var stopPoints = [{ x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }];
+  var maxPerTurn = [2, 3, 5];
 
-  var result1 = runSearch(graph, [0,0], [3,2], max_per_turn, stop_points);
-  equal (result1.text, "(1,0)(2,0)(3,0)(3,1)(3,2)", "max_per_turn [2,3,5] acts as [2,3,5,5,...]");
+  var result1 = runSearch(graph, [0,0], [3,2], maxPerTurn, stopPoints);
+  equal (result1.text, "(1,0)(2,0)(3,0)(3,1)(3,2)", "maxPerTurn [2,3,5] acts as [2,3,5,5,...]");
 
 });
 
@@ -183,10 +183,10 @@ test( "Pathfinding with barriers", function() {
   ]);
 
   var barrier = { start: { x: 0, y: 0 }, blocked: { x: 1, y: 0 } };
-  var stop_points = [];
-  var max_per_turn = 10;
+  var stopPoints = [];
+  var maxPerTurn = 10;
 
-  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points, [barrier]);
+  var result1 = runSearch(graph, [0,0], [2,2], maxPerTurn, stopPoints, [barrier]);
   equal (result1.text, "(0,1)(0,2)(1,2)(2,2)", "Algorithm picks longer path to avoid barrier");
 
   var graph = new Graph([
@@ -196,10 +196,10 @@ test( "Pathfinding with barriers", function() {
   ]);
 
   var barrier = { start: { x: 1, y: 0 }, blocked: { x: 0, y: 0 } };
-  var stop_points = [];
-  var max_per_turn = 10;
+  var stopPoints = [];
+  var maxPerTurn = 10;
 
-  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points, [barrier]);
+  var result1 = runSearch(graph, [0,0], [2,2], maxPerTurn, stopPoints, [barrier]);
   equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "Algorithm ignores barrier in wrong direction");
 
   var graph = new Graph([
@@ -212,10 +212,10 @@ test( "Pathfinding with barriers", function() {
     { start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 } },
     { start: { x: 0, y: 0 }, blocked: { x: 1, y: 0 } },
   ];
-  var stop_points = [];
-  var max_per_turn = 10;
+  var stopPoints = [];
+  var maxPerTurn = 10;
 
-  var result1 = runSearch(graph, [0,0], [2,2], max_per_turn, stop_points, barriers);
+  var result1 = runSearch(graph, [0,0], [2,2], maxPerTurn, stopPoints, barriers);
   equal (result1.text, "", "Algorithm is blocked by multiple barriers");
 
 
@@ -321,7 +321,7 @@ test( "GPS Pathfinding", function() {
       return this.weight === 0;
   };
   // Heuristic function
-  CityNode.prototype.GPS_distance = function(city) {
+  CityNode.prototype.GPSDistance = function(city) {
       var x = (city.longRad - this.longRad) * Math.cos((this.latRad + city.latRad)/2),
           y = city.latRad - this.latRad,
           res = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) * 6371;
@@ -331,7 +331,7 @@ test( "GPS Pathfinding", function() {
   CityNode.prototype.getCost = function(city) {
     // Re-use heuristic function for now
     // TODO: Determine the real distance between cities (from another data set)
-    return this.GPS_distance(city);
+    return this.GPSDistance(city);
   };
 
   var graph = new CityGraph(data, links);
@@ -340,7 +340,7 @@ test( "GPS Pathfinding", function() {
       end = graph.cities["Cannes"];
 
   var GPSheuristic = function(node0, node1) {
-    return node0.GPS_distance(node1);
+    return node0.GPSDistance(node1);
   };
 
   var result = astar.search(graph, start, end, undefined, [], [], {heuristic: GPSheuristic});
@@ -388,32 +388,32 @@ test('Find reachable locations', function() {
   ok(resultConsistsOf([[0,1], [1,0], [1,1], [2,1]], result.result),
     'Cannot reach location that is 1 movement away from being reached');
 
-  var stop_points = [{ x:0, y:1 }, { x:1, y:0 },];
+  var stopPoints = [{ x:0, y:1 }, { x:1, y:0 },];
   var result = runReachable([
       [0,1,1],
       [1,1,1],
       [1,1,1],
-  ], [0,0], 5, stop_points);
+  ], [0,0], 5, stopPoints);
 
   ok(resultConsistsOf([[0,1], [1,0]], result.result),
     'Cannot reach locations that are past stop points');
 
-  var stop_points = getStopPointsFromPairs([[0,2], [2,0]]);
+  var stopPoints = getStopPointsFromPairs([[0,2], [2,0]]);
   var result = runReachable([
       [0,1,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], 5, stop_points);
+  ], [0,0], 5, stopPoints);
 
   ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
     'Can move before a stop point but cannot move past it');
 
-  var stop_points = [{ x: 0, y: 0 }];
+  var stopPoints = [{ x: 0, y: 0 }];
   var result = runReachable([
       [0,1,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], 2, stop_points);
+  ], [0,0], 2, stopPoints);
 
   ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
     'Can reach other spaces when starting on a stop point');
@@ -429,84 +429,84 @@ test('Find reachable locations', function() {
   ok(resultConsistsOf([[0,1], [0,2], [1,0], [1,1], [2,0]], result.result),
     'Passing in a higher turns value calculates reachable locations in that many turns');
 
-  var stop_points = getStopPointsFromPairs([[0,1], [0,2], [1,0], [2,0]]);
+  var stopPoints = getStopPointsFromPairs([[0,1], [0,2], [1,0], [2,0]]);
   var turns = 2;
   var result = runReachable([
       [0,1,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], 5, stop_points, turns);
+  ], [0,0], 5, stopPoints, turns);
 
   ok(resultConsistsOf([[0,1], [0,2], [1,0], [2,0]], result.result),
     'With turns > 1, can hit multiple stop points');
 
-  var stop_points = [];
+  var stopPoints = [];
   var turns = 1;
-  var max_per_turn = [3, 2];
+  var maxPerTurn = [3, 2];
   var result = runReachable([
       [0,0,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], max_per_turn, stop_points, turns);
+  ], [0,0], maxPerTurn, stopPoints, turns);
 
   ok(resultConsistsOf([[1,0], [2,0], [2,1]], result.result),
-    'Calculates one turn-reachable locations based on only the first value of a complex max_per_turn value');
+    'Calculates one turn-reachable locations based on only the first value of a complex maxPerTurn value');
 
-  var stop_points = [];
+  var stopPoints = [];
   var turns = 2;
-  var max_per_turn = [3, 2];
+  var maxPerTurn = [3, 2];
   var result = runReachable([
       [0,0,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], max_per_turn, stop_points, turns);
+  ], [0,0], maxPerTurn, stopPoints, turns);
 
   ok(resultConsistsOf([[1,0], [2,0], [2,1], [2,2], [1,2]], result.result),
-    'Calculates two turn-reachable locations based on the first two values of a complex max_per_turn value');
+    'Calculates two turn-reachable locations based on the first two values of a complex maxPerTurn value');
 
-  var stop_points = [];
-  var max_per_turn = 0;
+  var stopPoints = [];
+  var maxPerTurn = 0;
   var result = runReachable([
       [0,0,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], max_per_turn, stop_points);
+  ], [0,0], maxPerTurn, stopPoints);
 
   ok(resultConsistsOf([], result.result),
-    'Returns an empty list if max_per_turn is 0');
+    'Returns an empty list if maxPerTurn is 0');
 
-  var stop_points = [];
-  var max_per_turn = [0, 1];
+  var stopPoints = [];
+  var maxPerTurn = [0, 1];
   var turns = 2;
   var result = runReachable([
       [0,0,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], max_per_turn, stop_points, turns);
+  ], [0,0], maxPerTurn, stopPoints, turns);
 
   ok(resultConsistsOf([[1,0]], result.result),
-    'Skips first turn of movement if first max_per_turn value is 0');
+    'Skips first turn of movement if first maxPerTurn value is 0');
 
-  var stop_points = [];
-  var max_per_turn = [1, 0];
+  var stopPoints = [];
+  var maxPerTurn = [1, 0];
   var turns = 2;
   var result = runReachable([
       [0,0,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], max_per_turn, stop_points, turns);
+  ], [0,0], maxPerTurn, stopPoints, turns);
 
   ok(resultConsistsOf([[1,0]], result.result),
-    'Skips second turn of movement if second max_per_turn value is 0');
+    'Skips second turn of movement if second maxPerTurn value is 0');
 
-  var stop_points = [];
-  var max_per_turn = [1, 0];
+  var stopPoints = [];
+  var maxPerTurn = [1, 0];
   var turns = 2;
   var result = runReachable([
       [0,0,1],
       [1,0,1],
       [1,1,1],
-  ], [0,0], max_per_turn, stop_points, turns, []);
+  ], [0,0], maxPerTurn, stopPoints, turns, []);
 
   ok(resultConsistsOf([[1,0]], result.result),
     'Works as normal if barriers is specified as an empty list');
@@ -514,14 +514,14 @@ test('Find reachable locations', function() {
   var barrier = {
     start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 },
   };
-  var stop_points = [];
-  var max_per_turn = 5;
+  var stopPoints = [];
+  var maxPerTurn = 5;
   var turns = 1;
   var result = runReachable([
       [0,1,1],
       [5,0,1],
       [5,5,1],
-  ], [0,0], max_per_turn, stop_points, turns, [barrier]);
+  ], [0,0], maxPerTurn, stopPoints, turns, [barrier]);
 
   ok(resultConsistsOf([[1,0]], result.result),
     'Barrier limits the reachable tiles');
@@ -529,14 +529,14 @@ test('Find reachable locations', function() {
   var barrier = {
     start: { x: 0, y: 1 }, blocked: { x: 0, y: 0 },
   };
-  var stop_points = [];
-  var max_per_turn = 5;
+  var stopPoints = [];
+  var maxPerTurn = 5;
   var turns = 1;
   var result = runReachable([
       [0,1,0],
       [0,0,0],
       [0,0,0],
-  ], [0,0], max_per_turn, stop_points, turns, [barrier]);
+  ], [0,0], maxPerTurn, stopPoints, turns, [barrier]);
 
   ok(resultConsistsOf([[0,1]], result.result),
     'One-way barrier in wrong direction does not limit the reachable tiles');
@@ -549,14 +549,14 @@ test('Find reachable locations', function() {
       start: { x: 1, y: 0 }, blocked: { x: 2, y: 0 },
     },
   ]
-  var stop_points = [];
-  var max_per_turn = 5;
+  var stopPoints = [];
+  var maxPerTurn = 5;
   var turns = 1;
   var result = runReachable([
       [0,1,1],
       [1,0,0],
       [1,0,0],
-  ], [0,0], max_per_turn, stop_points, turns, barriers);
+  ], [0,0], maxPerTurn, stopPoints, turns, barriers);
 
   ok(resultConsistsOf([[0,1], [1,0]], result.result),
     'Multiple barriers limit the reachable tiles');
@@ -566,43 +566,43 @@ test('Find reachable locations', function() {
 test( "Score (creation)", function() {
 
   var score = new Score(0, 0);
-  equal(score.valueOf(), 0, 'score value is equal to score input when max_per_turn is 0');
+  equal(score.valueOf(), 0, 'score value is equal to score input when maxPerTurn is 0');
 
   var score = new Score(3, 0);
-  equal(score.valueOf(), 3, 'score value is equal to score input when max_per_turn is 0');
+  equal(score.valueOf(), 3, 'score value is equal to score input when maxPerTurn is 0');
 
   var score = new Score(96, false);
-  equal(score.valueOf(), 96, 'score value is equal to score input when max_per_turn is false');
+  equal(score.valueOf(), 96, 'score value is equal to score input when maxPerTurn is false');
 
   var score = new Score(2567, undefined);
-  equal(score.valueOf(), 2567, 'score value is equal to score input when max_per_turn is undefined');
+  equal(score.valueOf(), 2567, 'score value is equal to score input when maxPerTurn is undefined');
 
   var score = new Score(1000001, undefined);
-  equal(score.valueOf(), 1000001, 'score value is still equal to massive score input when max_per_turn is undefined');
+  equal(score.valueOf(), 1000001, 'score value is still equal to massive score input when maxPerTurn is undefined');
 
   throws(function() {
     var score = new Score(undefined, false);
   }, Error('BadParam'), 'throws error when fed value of undefined for score');
 
-  var max_per_turn = [8, 4];
-  var score = new Score(12, max_per_turn);
-  ok(true, 'Score class can handle array values for max_per_turn');
+  var maxPerTurn = [8, 4];
+  var score = new Score(12, maxPerTurn);
+  ok(true, 'Score class can handle array values for maxPerTurn');
 
-  var max_per_turn = [8, 4, 6];
-  var score = new Score(19, max_per_turn);
-  ok(true, 'Score class can handle array values for max_per_turn');
+  var maxPerTurn = [8, 4, 6];
+  var score = new Score(19, maxPerTurn);
+  ok(true, 'Score class can handle array values for maxPerTurn');
 
-  var max_per_turn = [0, 2, 5];
-  var score = new Score(0, max_per_turn);
-  equal(score.valueOf(), 0, 'A score with an initial max_per_turn element of 0 and a zero input will still evaluate to 0');
+  var maxPerTurn = [0, 2, 5];
+  var score = new Score(0, maxPerTurn);
+  equal(score.valueOf(), 0, 'A score with an initial maxPerTurn element of 0 and a zero input will still evaluate to 0');
 
-  var max_per_turn = [0, 2, 5];
-  var score = new Score(1, max_per_turn);
-  equal(score.valueOf(), 1000001, 'A score with an initial max_per_turn element of 0 will bump turn count');
+  var maxPerTurn = [0, 2, 5];
+  var score = new Score(1, maxPerTurn);
+  equal(score.valueOf(), 1000001, 'A score with an initial maxPerTurn element of 0 will bump turn count');
 
-  var max_per_turn = [2, 0, 5];
-  var score = new Score(3, max_per_turn);
-  equal(score.valueOf(), 2000001, 'A score with a later max_per_turn element of 0 will bump turn count');
+  var maxPerTurn = [2, 0, 5];
+  var score = new Score(3, maxPerTurn);
+  equal(score.valueOf(), 2000001, 'A score with a later maxPerTurn element of 0 will bump turn count');
 
 });
 
@@ -612,83 +612,83 @@ test( "Score (valueOf)", function() {
   equal(score.valueOf(), 0, 'score valueOf is zero when score input is zero');
 
   var score = new Score(5, 10);
-  equal(score.valueOf(), 5, 'score valueOf equals the score input when the input is less than max_per_turn');
+  equal(score.valueOf(), 5, 'score valueOf equals the score input when the input is less than maxPerTurn');
 
   var score = new Score(10, 10);
-  equal(score.valueOf(), 10, 'score valueOf equals the score input when the input is equal to max_per_turn');
+  equal(score.valueOf(), 10, 'score valueOf equals the score input when the input is equal to maxPerTurn');
 
   var score = new Score(11, 10);
-  equal(score.valueOf(), 1000001, 'score valueOf becomes huge when score input is greater than max_per_turn');
+  equal(score.valueOf(), 1000001, 'score valueOf becomes huge when score input is greater than maxPerTurn');
 
   var score = new Score(22, 5);
-  equal(score.valueOf(), 4000002, 'score valueOf becomes multiples of huge when score input is much greater than max_per_turn');
+  equal(score.valueOf(), 4000002, 'score valueOf becomes multiples of huge when score input is much greater than maxPerTurn');
 
   var score = new Score(0, 10, 'stop point');
-  equal(score.valueOf(), 10, 'score value rounds up to max_per_turn due to stop point');
+  equal(score.valueOf(), 10, 'score value rounds up to maxPerTurn due to stop point');
 
   var score = new Score(1, 10, 'stop point');
-  equal(score.valueOf(), 10, 'score value rounds up to max_per_turn due to stop point');
+  equal(score.valueOf(), 10, 'score value rounds up to maxPerTurn due to stop point');
 
   var score = new Score(11, 10, 'stop point');
-  equal(score.valueOf(), 1000010, 'score value rounds up to max_per_turn due to stop point if score input is higher than max_per_turn');
+  equal(score.valueOf(), 1000010, 'score value rounds up to maxPerTurn due to stop point if score input is higher than maxPerTurn');
 
   var score = new Score(10, 10, 'stop point');
-  equal(score.valueOf(), 10, 'score value is not rounded up due to stop point if score == extra_weight');
+  equal(score.valueOf(), 10, 'score value is not rounded up due to stop point if score == extraWeight');
 
   var score = new Score(4, undefined, 'stop point');
-  equal(score.valueOf(), 1000000, 'score value rounds up to massive value due to stop point when max_per_turn is undefined');
+  equal(score.valueOf(), 1000000, 'score value rounds up to massive value due to stop point when maxPerTurn is undefined');
 
-  var max_per_turn = [8, 8];
-  var score = new Score(5, max_per_turn);
-  equal(score.valueOf(), 5, 'score valueOf equals the score input when input is lower than all max_per_turn values');
+  var maxPerTurn = [8, 8];
+  var score = new Score(5, maxPerTurn);
+  equal(score.valueOf(), 5, 'score valueOf equals the score input when input is lower than all maxPerTurn values');
 
-  var max_per_turn = [8, 2];
-  var score = new Score(5, max_per_turn);
-  equal(score.valueOf(), 5, 'score valueOf equals the score input when input is higher than second max_per_turn value');
+  var maxPerTurn = [8, 2];
+  var score = new Score(5, maxPerTurn);
+  equal(score.valueOf(), 5, 'score valueOf equals the score input when input is higher than second maxPerTurn value');
 
-  var max_per_turn = [5, 7];
-  var score = new Score(6, max_per_turn);
-  equal(score.valueOf(), 1000001, 'score valueOf turns count is bumped up if score input is higher than first max_per_turn value');
+  var maxPerTurn = [5, 7];
+  var score = new Score(6, maxPerTurn);
+  equal(score.valueOf(), 1000001, 'score valueOf turns count is bumped up if score input is higher than first maxPerTurn value');
 
-  var max_per_turn = [7, 4];
-  var score = new Score(8, max_per_turn, 'stop point');
-  equal(score.valueOf(), 1000004, 'score valueOf rounds up to second max_per_turn value if hitting a stop point after 1 turn');
+  var maxPerTurn = [7, 4];
+  var score = new Score(8, maxPerTurn, 'stop point');
+  equal(score.valueOf(), 1000004, 'score valueOf rounds up to second maxPerTurn value if hitting a stop point after 1 turn');
 
-  var max_per_turn = [3, 6];
-  var score = new Score(10, max_per_turn, 'stop point');
-  equal(score.valueOf(), 2000006, 'score valueOf rounds up to second max_per_turn value if hitting a stop point after 2 or more turns');
+  var maxPerTurn = [3, 6];
+  var score = new Score(10, maxPerTurn, 'stop point');
+  equal(score.valueOf(), 2000006, 'score valueOf rounds up to second maxPerTurn value if hitting a stop point after 2 or more turns');
 
-  var max_per_turn = [3, 6];
-  var score = new Score(70, max_per_turn, 'stop point');
-  equal(score.valueOf(), 12000006, 'score valueOf rounds up to second max_per_turn value if hitting a stop point after more than 2 turns');
+  var maxPerTurn = [3, 6];
+  var score = new Score(70, maxPerTurn, 'stop point');
+  equal(score.valueOf(), 12000006, 'score valueOf rounds up to second maxPerTurn value if hitting a stop point after more than 2 turns');
 
-  var max_per_turn = [4, 8];
-  var score = new Score(13, max_per_turn);
-  equal(score.valueOf(), 2000001, 'score valueOf accounts for ascending max_per_turn values when score input is higher than sum of those values');
+  var maxPerTurn = [4, 8];
+  var score = new Score(13, maxPerTurn);
+  equal(score.valueOf(), 2000001, 'score valueOf accounts for ascending maxPerTurn values when score input is higher than sum of those values');
 
-  var max_per_turn = [8, 4];
-  var score = new Score(13, max_per_turn);
-  equal(score.valueOf(), 2000001, 'score valueOf accounts for descending max_per_turn values when score input is higher than sum of those values');
+  var maxPerTurn = [8, 4];
+  var score = new Score(13, maxPerTurn);
+  equal(score.valueOf(), 2000001, 'score valueOf accounts for descending maxPerTurn values when score input is higher than sum of those values');
 
-  var max_per_turn = [1, 2, 3];
-  var score = new Score(3, max_per_turn);
-  equal(score.valueOf(), 1000002, 'score valueOf accepts low score input values with >2 max_per_turn values');
+  var maxPerTurn = [1, 2, 3];
+  var score = new Score(3, maxPerTurn);
+  equal(score.valueOf(), 1000002, 'score valueOf accepts low score input values with >2 maxPerTurn values');
 
-  var max_per_turn = [8, 4, 5];
-  var score = new Score(18, max_per_turn);
-  equal(score.valueOf(), 3000001, 'score valueOf accounts for >2 max_per_turn values when score input is higher than sum of those values');
+  var maxPerTurn = [8, 4, 5];
+  var score = new Score(18, maxPerTurn);
+  equal(score.valueOf(), 3000001, 'score valueOf accounts for >2 maxPerTurn values when score input is higher than sum of those values');
 
-  var max_per_turn = [1, 2, 3];
-  var score = new Score(6, max_per_turn);
-  equal(score.valueOf(), 2000003, 'score valueOf accounts for >2 max_per_turn values when score input is equal to sum of those values');
+  var maxPerTurn = [1, 2, 3];
+  var score = new Score(6, maxPerTurn);
+  equal(score.valueOf(), 2000003, 'score valueOf accounts for >2 maxPerTurn values when score input is equal to sum of those values');
 
-  var max_per_turn = [7, 2, 5];
-  var score = new Score(10, max_per_turn, 'stop point');
-  equal(score.valueOf(), 2000005, 'score valueOf rounds up to third max_per_turn value if hitting a stop point after more than 3 turns');
+  var maxPerTurn = [7, 2, 5];
+  var score = new Score(10, maxPerTurn, 'stop point');
+  equal(score.valueOf(), 2000005, 'score valueOf rounds up to third maxPerTurn value if hitting a stop point after more than 3 turns');
 
-  var max_per_turn = [7, 2, 5, 4, 5, 6, 6, 3];
-  var score = new Score(36, max_per_turn, 'stop point');
-  equal(score.valueOf(), 7000003, 'score valueOf rounds up to nth max_per_turn value if hitting a stop point after more than n turns');
+  var maxPerTurn = [7, 2, 5, 4, 5, 6, 6, 3];
+  var score = new Score(36, maxPerTurn, 'stop point');
+  equal(score.valueOf(), 7000003, 'score valueOf rounds up to nth maxPerTurn value if hitting a stop point after more than n turns');
 
 });
 
@@ -696,11 +696,11 @@ test( "Score (comparisons)", function() {
 
   var score1 = new Score(3, 5);
   var score2 = new Score(6, 5);
-  ok(score1 < score2, 'score with fewer turns (and more extra_weight) is less than score with more turns');
+  ok(score1 < score2, 'score with fewer turns (and more extraWeight) is less than score with more turns');
 
   var score1 = new Score(3, 5);
   var score2 = new Score(6, 5);
-  ok(score1 <= score2, 'score with fewer turns (and more extra_weight) is less than or equal to than score with more turns');
+  ok(score1 <= score2, 'score with fewer turns (and more extraWeight) is less than or equal to than score with more turns');
 
   var score1 = new Score(3, 5);
   var score2 = new Score(3, 5);
@@ -721,7 +721,7 @@ test( "Score (operations)", function() {
 
   var score1 = new Score(1, 5);
   var score2 = new Score(2, 5);
-  equal(score1 + score2, 3, 'adding scores is as normal if both scores are far below their max_per_turn values');
+  equal(score1 + score2, 3, 'adding scores is as normal if both scores are far below their maxPerTurn values');
 
   var score1 = new Score(3, 5);
   var score2 = new Score(6, 5);
@@ -759,36 +759,36 @@ test( "Score (operations)", function() {
 
 test( "Score.add() - bad parameters", function() {
 
-  var max_per_turn = 4;
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = 4;
+  var score = new Score(0, maxPerTurn);
   var addition = 0;
   throws(function() {
     var result = score.add(addition);
   }, Error('BadParam'), 'Does not accept the addition of 0');
 
-  var max_per_turn = 4;
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = 4;
+  var score = new Score(0, maxPerTurn);
   var addition = false;
   throws(function() {
     var result = score.add(addition);
   }, Error('BadParam'), 'Does not accept the addition of false');
 
-  var max_per_turn = 4;
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = 4;
+  var score = new Score(0, maxPerTurn);
   var addition = undefined;
   throws(function() {
     var result = score.add(addition);
   }, Error('BadParam'), 'Does not accept the addition of undefined');
 
-  var max_per_turn = [2, 5];
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = [2, 5];
+  var score = new Score(0, maxPerTurn);
   var addition = undefined;
   throws(function() {
     var result = score.add(addition);
-  }, Error('BadParam'), 'Does not accept a falsy value when the score has a variable max_per_turn');
+  }, Error('BadParam'), 'Does not accept a falsy value when the score has a variable maxPerTurn');
 
-  var max_per_turn = 5;
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = 5;
+  var score = new Score(0, maxPerTurn);
   var addition = -0.5;
   throws(function() {
     var result = score.add(addition);
@@ -796,47 +796,47 @@ test( "Score.add() - bad parameters", function() {
 
 });
 
-test( "Score.add() with simple max_per_turn values", function() {
+test( "Score.add() with simple maxPerTurn values", function() {
 
-  var max_per_turn = 0;
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = 0;
+  var score = new Score(0, maxPerTurn);
   var addition = 3579;
   var result = score.add(addition);
-  equal(result, 3579, 'addition of a number to a zero score when max_per_turn is zero acts as normal');
+  equal(result, 3579, 'addition of a number to a zero score when maxPerTurn is zero acts as normal');
   var addition = 2666;
   var result = result.add(addition);
-  equal(result, 6245, 'addition of a number to a positive score when max_per_turn is zero acts as normal');
+  equal(result, 6245, 'addition of a number to a positive score when maxPerTurn is zero acts as normal');
 
-  var max_per_turn = 4;
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = 4;
+  var score = new Score(0, maxPerTurn);
   var addition = 5;
   var result = score.add(addition);
-  equal(result, 1000001, 'addition of a value larger than max_per_turn should increment turn count');
+  equal(result, 1000001, 'addition of a value larger than maxPerTurn should increment turn count');
 
-  var max_per_turn = 4;
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = 4;
+  var score = new Score(0, maxPerTurn);
   var addition = 13;
   var result = score.add(addition);
-  equal(result, 3000001, 'addition of a value more than double the max_per_turn value should bump turn count multiple times');
+  equal(result, 3000001, 'addition of a value more than double the maxPerTurn value should bump turn count multiple times');
   var result = result.add(addition);
-  equal(result, 6000002, 'addition of a second value more than double the max_per_turn value should bump turn count multiple times');
+  equal(result, 6000002, 'addition of a second value more than double the maxPerTurn value should bump turn count multiple times');
 
-  // test 3 cases of total_extra_weight (as compared to max_per_turn_value)
-  var max_per_turn = 4;
-  var score = new Score(0, max_per_turn);
+  // test 3 cases of totalExtraWeight (as compared to maxPerTurnValue)
+  var maxPerTurn = 4;
+  var score = new Score(0, maxPerTurn);
   var addition = 1;
   var result = score.add(addition); // less than
-  equal(result.valueOf(), 1, 'addition of a value such that the total extra weight is less than the max_per_turn value should act as normal addition');
+  equal(result.valueOf(), 1, 'addition of a value such that the total extra weight is less than the maxPerTurn value should act as normal addition');
   var addition = 3;
   var result = result.add(addition); // equal to
-  equal(result.valueOf(), 4, 'addition of a value such that the total extra weight equals the max_per_turn value should act as normal addition');
+  equal(result.valueOf(), 4, 'addition of a value such that the total extra weight equals the maxPerTurn value should act as normal addition');
   var addition = 1;
   var result = result.add(addition); // greater than
-  equal(result.valueOf(), 1000001, 'addition of a value such that the total extra weight is greater than the max_per_turn value should bump the turn count');
+  equal(result.valueOf(), 1000001, 'addition of a value such that the total extra weight is greater than the maxPerTurn value should bump the turn count');
 
-  var max_per_turn = 4;
-  var score = new Score(0, max_per_turn);
-  var addition = new Score(5, max_per_turn);
+  var maxPerTurn = 4;
+  var score = new Score(0, maxPerTurn);
+  var addition = new Score(5, maxPerTurn);
   var result = score.add(addition);
   equal(result.valueOf(), 1000001, 'addition of a zero score and a positive score should work intuitively (both properties added)');
   var addition = new Score(2000004);
@@ -845,10 +845,10 @@ test( "Score.add() with simple max_per_turn values", function() {
 
 });
 
-test( "Score.add() with variable max_per_turn values", function() {
+test( "Score.add() with variable maxPerTurn values", function() {
 
-  var max_per_turn = [2, 5];
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = [2, 5];
+  var score = new Score(0, maxPerTurn);
   var addition = 1;
   var result = score.add(addition);
   equal(result, 1, 'addition of a small positive value to a zero score should add as normal');
@@ -856,101 +856,101 @@ test( "Score.add() with variable max_per_turn values", function() {
   var result = score.add(addition);
   equal(result, 1, 'addition of a small positive value to a non-zero score should add as normal');
 
-  var max_per_turn = [2, 5];
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = [2, 5];
+  var score = new Score(0, maxPerTurn);
   var addition = 2;
   var result = score.add(addition);
-  equal(result.valueOf(), 2, 'addition of a value equal to the first max_per_turn value should NOT increment turn count');
+  equal(result.valueOf(), 2, 'addition of a value equal to the first maxPerTurn value should NOT increment turn count');
 
-  var max_per_turn = [2, 5];
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = [2, 5];
+  var score = new Score(0, maxPerTurn);
   var addition = 3;
   var result = score.add(addition);
-  equal(result.valueOf(), 1000001, 'addition of a value larger than the first max_per_turn value should increment turn count');
+  equal(result.valueOf(), 1000001, 'addition of a value larger than the first maxPerTurn value should increment turn count');
   var result = result.add(addition);
-  equal(result.valueOf(), 1000004, 'addition of a second value smaller than the second max_per_turn should not bump turn count');
+  equal(result.valueOf(), 1000004, 'addition of a second value smaller than the second maxPerTurn should not bump turn count');
   var result = result.add(addition);
-  equal(result.valueOf(), 2000002, 'addition of a third value totalling more than the second max_per_turn should bump turn count');
+  equal(result.valueOf(), 2000002, 'addition of a third value totalling more than the second maxPerTurn should bump turn count');
 
-  var max_per_turn = [14, 5];
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = [14, 5];
+  var score = new Score(0, maxPerTurn);
   var addition = 13;
   var result = score.add(addition);
-  equal(result.valueOf(), 13, 'addition of a value smaller than the (large) first max_per_turn value should not bump turn count');
+  equal(result.valueOf(), 13, 'addition of a value smaller than the (large) first maxPerTurn value should not bump turn count');
   var result = result.add(addition);
-  equal(result.valueOf(), 3000002, 'addition of a second value totalling more than double the second max_per_turn should bump turn count twice');
+  equal(result.valueOf(), 3000002, 'addition of a second value totalling more than double the second maxPerTurn should bump turn count twice');
   var result = result.add(addition);
-  equal(result.valueOf(), 5000005, 'addition of a third value totalling more than double the second (final) max_per_turn should bump turn count twice');
+  equal(result.valueOf(), 5000005, 'addition of a third value totalling more than double the second (final) maxPerTurn should bump turn count twice');
 
   var score = new Score(1, 4);
   var addition = new Score(2, 5);
   var result = score.add(addition);
-  equal(result.valueOf(), 3, 'addition of two scores with different max_per_turn values should work as normal score addition');
+  equal(result.valueOf(), 3, 'addition of two scores with different maxPerTurn values should work as normal score addition');
 
-  var max_per_turn = [0, 2, 5];
-  var score = new Score(0, max_per_turn);
+  var maxPerTurn = [0, 2, 5];
+  var score = new Score(0, maxPerTurn);
   var addition = 2;
   var result = score.add(addition);
-  equal(result.valueOf(), 1000002, 'addition of a score with an initial max_per_turn element of 0 will bump turn count');
+  equal(result.valueOf(), 1000002, 'addition of a score with an initial maxPerTurn element of 0 will bump turn count');
 
-  var max_per_turn = [2, 0, 5];
-  var score = new Score(1, max_per_turn);
+  var maxPerTurn = [2, 0, 5];
+  var score = new Score(1, maxPerTurn);
   var addition = 2;
   var result = score.add(addition);
-  equal(result.valueOf(), 2000001, 'addition of a score with a later max_per_turn element of 0 will bump turn count');
+  equal(result.valueOf(), 2000001, 'addition of a score with a later maxPerTurn element of 0 will bump turn count');
 
 });
 
 test( "Score.addSingleSpace()", function() {
 
-  var max_per_turn = [2, 5];
-  var score1 = new Score(0, max_per_turn);
+  var maxPerTurn = [2, 5];
+  var score1 = new Score(0, maxPerTurn);
   var score2 = score1.addSingleSpace(1);
   equal(score2.turns, 0, 'addition of a sufficiently small value should keep turns value the same');
-  equal(score2.extra_weight, 1, 'addition of a sufficiently small value should increment extra_weight only');
+  equal(score2.extraWeight, 1, 'addition of a sufficiently small value should increment extraWeight only');
 
-  var max_per_turn = [4, 5];
-  var score1 = new Score(1, max_per_turn);
+  var maxPerTurn = [4, 5];
+  var score1 = new Score(1, maxPerTurn);
   var score2 = score1.addSingleSpace(3);
-  equal(score2.turns, 0, 'addition of a sufficiently small value to maximize extra_weight should keep turns value the same');
-  equal(score2.extra_weight, 4, 'addition of a sufficiently small value to maximize extra_weight should keep turns value the same should increase extra_weight only');
+  equal(score2.turns, 0, 'addition of a sufficiently small value to maximize extraWeight should keep turns value the same');
+  equal(score2.extraWeight, 4, 'addition of a sufficiently small value to maximize extraWeight should keep turns value the same should increase extraWeight only');
 
-  var max_per_turn = 4;
-  var score1 = new Score(0, max_per_turn);
+  var maxPerTurn = 4;
+  var score1 = new Score(0, maxPerTurn);
   var score2 = score1.addSingleSpace(5);
-  equal(score2, false, 'addition of a value larger than max_per_turn should return false');
+  equal(score2, false, 'addition of a value larger than maxPerTurn should return false');
 
-  var max_per_turn = [4, 7, 9];
-  var score1 = new Score(0, max_per_turn);
+  var maxPerTurn = [4, 7, 9];
+  var score1 = new Score(0, maxPerTurn);
   var score2 = score1.addSingleSpace(10);
-  equal(score2, false, 'addition of a value larger than all max_per_turn values should return false');
+  equal(score2, false, 'addition of a value larger than all maxPerTurn values should return false');
 
-  var max_per_turn = [4, 7, 9];
-  var score1 = new Score(0, max_per_turn);
+  var maxPerTurn = [4, 7, 9];
+  var score1 = new Score(0, maxPerTurn);
   var score2 = score1.addSingleSpace(9);
-  equal(score2.turns, 2, 'addition of a value larger than early max_per_turn values should increase turns until a max_per_turn value is sufficient');
-  equal(score2.extra_weight, 9, 'addition of a value larger than early max_per_turn values should set extra_weight to the addition input');
+  equal(score2.turns, 2, 'addition of a value larger than early maxPerTurn values should increase turns until a maxPerTurn value is sufficient');
+  equal(score2.extraWeight, 9, 'addition of a value larger than early maxPerTurn values should set extraWeight to the addition input');
 
-  var max_per_turn = 4;
-  var score1 = new Score(2, max_per_turn);
+  var maxPerTurn = 4;
+  var score1 = new Score(2, maxPerTurn);
   var score2 = score1.addSingleSpace(3);
   equal(score2.turns, 1, 'addition of a large enough value should increment the turns');
-  equal(score2.extra_weight, 3, 'addition of a large enough value should increment the turns should set the extra_weight to the addition input');
+  equal(score2.extraWeight, 3, 'addition of a large enough value should increment the turns should set the extraWeight to the addition input');
 
-  var max_per_turn = [4, 5];
-  var score1 = new Score(4, max_per_turn);
+  var maxPerTurn = [4, 5];
+  var score1 = new Score(4, maxPerTurn);
   var score2 = score1.addSingleSpace(1);
   equal(score2.turns, 1, 'addition of a small value when extra weight is maximized should increment the turns');
-  equal(score2.extra_weight, 1, 'addition of a small value when extra weight is maximized should increment the turns should reset extra_weight to 1');
+  equal(score2.extraWeight, 1, 'addition of a small value when extra weight is maximized should increment the turns should reset extraWeight to 1');
 
-  var max_per_turn = [2, 5];
-  var score1 = new Score(2, max_per_turn);
+  var maxPerTurn = [2, 5];
+  var score1 = new Score(2, maxPerTurn);
   var score2 = score1.addSingleSpace(5, 'stop point');
-  equal(score2.turns, 1, 'addition of a value equal to a max_per_turn value should cause turns to increase by only 1');
-  equal(score2.extra_weight, 5, 'addition of a value equal to a max_per_turn value should cause extra_weight == max_per_turn[i]');
+  equal(score2.turns, 1, 'addition of a value equal to a maxPerTurn value should cause turns to increase by only 1');
+  equal(score2.extraWeight, 5, 'addition of a value equal to a maxPerTurn value should cause extraWeight == maxPerTurn[i]');
 
-  var max_per_turn = 4;
-  var score1 = new Score(0, max_per_turn);
+  var maxPerTurn = 4;
+  var score1 = new Score(0, maxPerTurn);
   throws(function() {
     var score2 = score1.addSingleSpace(undefined);
   }, Error('BadParam'), "An undefined 'addition' parameter throws an error");
@@ -963,26 +963,26 @@ test( "Score.addSingleSpace()", function() {
 });
 
 function getStopPointsFromPairs(pairs) {
-  var stop_points = [];
+  var stopPoints = [];
   for (var i in pairs) {
-    var stop_point = { x: pairs[i][0], y: pairs[i][1] };
-    stop_points.push(stop_point);
+    var stopPoint = { x: pairs[i][0], y: pairs[i][1] };
+    stopPoints.push(stopPoint);
   }
-  return stop_points;
+  return stopPoints;
 }
 
-function resultConsistsOf(node_list, array) {
-  if (node_list.length != array.length) {
+function resultConsistsOf(nodeList, array) {
+  if (nodeList.length != array.length) {
       console.log("list should be:");
-      console.log(node_list);
+      console.log(nodeList);
       console.log("list is:");
       console.log(array);
     return false;
   }
-  for (var i in node_list) {
-    if (!nodeInResult(node_list[i], array)) {
+  for (var i in nodeList) {
+    if (!nodeInResult(nodeList[i], array)) {
       console.log("list should be:");
-      console.log(node_list);
+      console.log(nodeList);
       console.log("list is:");
       console.log(array);
       return false;
@@ -1001,14 +1001,14 @@ function nodeInResult(pair, array) {
   return false;
 }
 
-function runSearch(graph, start, end, max_per_turn, stop_points, barriers, options) {
+function runSearch(graph, start, end, maxPerTurn, stopPoints, barriers, options) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
   }
   start = graph.grid[start[0]][start[1]];
   end = graph.grid[end[0]][end[1]];
   var sTime = new Date(),
-    result = astar.search(graph, start, end, max_per_turn, stop_points, barriers, options),
+    result = astar.search(graph, start, end, maxPerTurn, stopPoints, barriers, options),
     eTime = new Date();
   return {
     result: result,
@@ -1017,13 +1017,13 @@ function runSearch(graph, start, end, max_per_turn, stop_points, barriers, optio
   };
 }
 
-function runReachable(graph, start, max_per_turn, stop_points, turns, barriers) {
+function runReachable(graph, start, maxPerTurn, stopPoints, turns, barriers) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
   }
   start = graph.grid[start[0]][start[1]];
   var sTime = new Date(),
-    result = astar.findReachablePoints(graph, start, max_per_turn, stop_points, turns, barriers),
+    result = astar.findReachablePoints(graph, start, maxPerTurn, stopPoints, turns, barriers),
     eTime = new Date();
   return {
     result: result,
