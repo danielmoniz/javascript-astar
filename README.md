@@ -8,15 +8,22 @@ See a demo of the original version at http://www.briangrinstead.com/files/astar/
 
 This is a library for pathfinding intended for use with turn-based games. It
 maintains compatibility with standard pathfinding searches using graphs that
-contain weights.
+contain weights. It provides a new search method called findReachablePoints()
+that returns all coordinates reachable from a given location.
 
 Additionally, it includes the ability to provide (along with the graph & start
- and end points) a max-per-turn value and a list of stop points.
+ and end points) a maxPerTurn value, a list of stop points, and a list of
+one-way barriers.
 
-* max-per-turn: The simplest use for this would be a maximum movement per turn
+* maxPerTurn: The simplest use for this would be a maximum movement per turn
 value.
 * stop points: a list of coordinates where an entity (character, army, etc.)
   would have to stop for the rest of the turn.
+* barriers: a list of objects containing coordinates that instruct the
+algorithm to ignore entering specific tiles from specific directions. Acts as a
+wall, but is one-way and can easily be made two-way.
+* turns: findReachablePoints() allows for specifying the number of turns of
+movement to allow.
 
 Some examples as to how these could be used:
 
@@ -26,17 +33,19 @@ turn.
 continuing on. This allows the defending player the chance to respond by
 either attacking or retreating.
 * A display that indicates everywhere a character can move in a single turn.
+* Armies can join the combat from any direction, but fighting armies can only
+flee in certain directions (uses one-way barriers).
 * ...and so on.
 
-max-per-turn can also be an array of values. This represents an entity having a
+maxPerTurn can also be an array of values. This represents an entity having a
 variable movement speed. The last value will be used for all later movement.
 
 Examples:
 
-* Let max-per-turn be [1, 2, 3]. This could represent an accelerating car
+* Let maxPerTurn be [1, 2, 3]. This could represent an accelerating car
   that can move 1 space on its first turn, 2 on its second, and 3 on its third.
   It then continues at a top speed of 3 indefinitely.
-* Let max-per-turn be [8, 0, 4]. This could represent a runner pushing
+* Let maxPerTurn be [8, 0, 4]. This could represent a runner pushing
   themselves to sprint on the first turn, then tiring and needing to rest,
   and eventually reaching a sustainable speed of 4 by the third turn and on.
 
@@ -86,19 +95,44 @@ If you want just the basic A* search code, use code like this: http://gist.githu
 
 	<script type='text/javascript' src='astar.js'></script>
 	<script type='text/javascript'>
+          // ADVANCED SEARCH --------------
                 var graph = new Graph([
                     [1,3,0],  // array of weights
                     [1,1,0],
                     [0,1,1]
                 ]);
-                var stop_points = [{ x: 1, y: 0 }];
+                var stopPoints = [{ x: 1, y: 0 }];
 		var start = graph.grid[0][0];
 		var end = graph.grid[2][2];
-                var max_per_turn = 7;
-		var result = astar.search(graph, start, end, max_per_turn, stop_points);
+                var maxPerTurn = 7;
+		var result = astar.search(graph, start, end, maxPerTurn, stopPoints);
                 // result is an array containing the shortest path
                 // the path will take the route with weight 3 because the
-                // entire path can be run in a single turn with 7 max_per_turn
+                // entire path can be run in a single turn with 7 maxPerTurn
+
+          // FINDING REACHABLE POINTS --------------
+                var graph = new Graph([
+                    [1,1,1],  // array of weights
+                    [1,1,1],
+                    [1,1,1]
+                ]);
+                var stopPoints = [{ x: 1, y: 0 }];
+		var start = graph.grid[0][0];
+                var maxPerTurn = 3;
+                var turns = 1;
+                var barriers = [
+                    { start: { x: 0, y: 1 }, blocked: { x: 0, y: 2 } },
+                    { start: { x: 1, y: 1 }, blocked: { x: 1, y: 2 } },
+                  ];
+		var result = astar.findReachablePoints(
+                    graph, start, maxPerTurn, stopPoints, turns, barriers);
+                // result is a list of coordinates that can be traveled to in
+                one turn (due to turns=1)
+                // includes:
+                // (1,0) <- stops here because of stop point
+                // (0,1) <- cannot go to (0,2) because of first barrier
+                // (1,1) <- cannot go to (1,2) because of second barrier
+                // (2,1) <- cannot continue to (2,2) because of turns=1
 
 	</script>
 
