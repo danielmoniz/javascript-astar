@@ -36,7 +36,7 @@ function getHeap() {
 }
 
 var astar = {
-    init: function(graph, barriers) {
+    init: function(graph, barriers, stopPoints, partialStopPoints) {
         for (var i = 0, len = graph.nodes.length; i < len; ++i) {
             var node = graph.nodes[i];
             node.f = 0;
@@ -45,6 +45,22 @@ var astar = {
             node.visited = false;
             node.closed = false;
             node.parent = null;
+        }
+
+        if (!stopPoints) stopPoints = [];
+        for (var i in stopPoints) {
+          var point = stopPoints[i];
+          var node = graph.grid[point.x][point.y];
+          node.stopPoint = true;
+        }
+
+        if (!partialStopPoints) partialStopPoints = [];
+        for (var i in partialStopPoints) {
+          var partialStopPoint = partialStopPoints[i];
+          var node = graph.grid[partialStopPoint.x][partialStopPoint.y];
+          node.partialStopPoint = true;
+          if (!node.allowedMoves) node.allowedMoves = [];
+          node.allowedMoves = node.allowedMoves.concat(partialStopPoint.allowedMoves);
         }
 
         if (!barriers) return;
@@ -81,18 +97,11 @@ var astar = {
     * Example barrier: { start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 } }
     * This example prevents pathing from 'start' to 'blocked'.
     */
-    findReachablePoints: function(graph, start, maxPerTurn, stopPoints, turns, barriers) {
-
+    findReachablePoints: function(graph, start, maxPerTurn, stopPoints, turns, barriers, partialStopPoints) {
         if (!maxPerTurn) return [];
-        astar.init(graph, barriers);
+        astar.init(graph, barriers, stopPoints, partialStopPoints);
 
-        if (!stopPoints) stopPoints = [];
         if (!turns) turns = 1;
-        for (var i in stopPoints) {
-          var point = stopPoints[i];
-          var node = graph.grid[point.x][point.y];
-          node.stopPoint = true;
-        }
 
         var reachable = [];
         var openHeap = new BinaryHeap(function(node) {
@@ -132,12 +141,8 @@ var astar = {
                 }
 
                 // Ignore neighbor if a barrier is in place
-                try {
-                  if (currentNode.barriers.indexOf(neighbor) > -1) continue;
-                } catch (error) {}
+                if (currentNode.barriers && currentNode.barriers.indexOf(neighbor) > -1) continue;
 
-                // The g score is the shortest distance from start to current node.
-                // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
                 if (currentNode.g == 0) {
                   if (currentNode == start) {
                     currentNode.g = new Score(0, maxPerTurn);
@@ -145,7 +150,11 @@ var astar = {
                     currentNode.g = new Score(0, maxPerTurn, currentNode.stopPoint);
                   }
                 }
-                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stopPoint),
+
+                // The g score is the shortest distance from start to current node.
+                // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
+                var stopPoint = this.isNeighborStopPoint(currentNode, neighbor);
+                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), stopPoint),
                     beenVisited = neighbor.visited;
 
                 if (gScore === false) continue;
@@ -194,15 +203,8 @@ var astar = {
     * @param {Function} [options.heuristic] Heuristic function (see
     *          astar.heuristics).
     */
-    search: function(graph, start, end, maxPerTurn, stopPoints, barriers, options) {
-        astar.init(graph, barriers);
-
-        if (!stopPoints) stopPoints = [];
-        for (var i in stopPoints) {
-          var point = stopPoints[i];
-          var node = graph.grid[point.x][point.y];
-          node.stopPoint = true;
-        }
+    search: function(graph, start, end, maxPerTurn, stopPoints, barriers, options, partialStopPoints) {
+        astar.init(graph, barriers, stopPoints, partialStopPoints);
 
         options = options || {};
         var heuristic = options.heuristic || astar.heuristics.manhattan,
@@ -240,15 +242,10 @@ var astar = {
                 }
 
                 // Ignore neighbor if a barrier is in place
-                try {
-                  if (currentNode.barriers.indexOf(neighbor) > -1) continue;
-                } catch (error) {}
+                if (currentNode.barriers && currentNode.barriers.indexOf(neighbor) > -1) continue;
 
                 // @TODO Ensure nodes that are impossible to reach are removed
                 // (or waited for if they can be reached later)
-
-                // The g score is the shortest distance from start to current node.
-                // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
 
                 if (currentNode.g == 0) {
                   if (currentNode == start) {
@@ -260,7 +257,10 @@ var astar = {
                   throw new Error('BadValue', 'currentNode.g cannot be undefined. Check that start node belongs to this graph.');
                 }
 
-                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), neighbor.stopPoint),
+                // The g score is the shortest distance from start to current node.
+                // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
+                var stopPoint = this.isNeighborStopPoint(currentNode, neighbor);
+                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), stopPoint),
                     beenVisited = neighbor.visited;
 
                 if (gScore === false) continue;
@@ -301,6 +301,23 @@ var astar = {
 
         // No result was found - empty array signifies failure to find path.
         return [];
+    },
+
+    isNeighborStopPoint: function(currentNode, neighbor) {
+        var stopPoint = neighbor.stopPoint || false;
+        if (!stopPoint && currentNode.partialStopPoint) {
+            stopPoint = true;
+            for (var i in currentNode.allowedMoves) {
+                var move = currentNode.allowedMoves[i];
+                console.log(move);
+                if (move.x == neighbor.x && move.y == neighbor.y) {
+                    stopPoint = false;
+                    break;
+                }
+            }
+        }
+
+        return stopPoint;
     },
 
     // See list of heuristics: http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
