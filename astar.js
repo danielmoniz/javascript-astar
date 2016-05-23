@@ -59,8 +59,11 @@ var astar = {
           var partialStopPoint = partialStopPoints[i];
           var node = graph.grid[partialStopPoint.x][partialStopPoint.y];
           node.partialStopPoint = true;
+
           if (!node.allowedMoves) node.allowedMoves = [];
-          node.allowedMoves = node.allowedMoves.concat(partialStopPoint.allowedMoves);
+          if (partialStopPoint.allowedMoves) {
+            node.allowedMoves = node.allowedMoves.concat(partialStopPoint.allowedMoves);
+          }
         }
 
         if (!barriers) return;
@@ -307,9 +310,9 @@ var astar = {
         var stopPoint = neighbor.stopPoint || false;
         if (!stopPoint && currentNode.partialStopPoint) {
             stopPoint = true;
+            if (!currentNode.allowedMoves) return true;
             for (var i in currentNode.allowedMoves) {
                 var move = currentNode.allowedMoves[i];
-                console.log(move);
                 if (move.x == neighbor.x && move.y == neighbor.y) {
                     stopPoint = false;
                     break;

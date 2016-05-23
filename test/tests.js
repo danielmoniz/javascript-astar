@@ -147,7 +147,7 @@ test( "Pathfinding with stop points", function() {
   ]);
   var stopPoints = [{ x: 2, y: 1 }];
   var result1 = runSearch(graph, [0,0], [2,2], 10, stopPoints);
-  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "stop point is more efficient when it happens on the final movement point of maxPerTurn");
+  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "Stop point is more efficient when it happens on the final movement point of maxPerTurn");
 
   var graph = new Graph([
       [1,10,4],
@@ -156,7 +156,56 @@ test( "Pathfinding with stop points", function() {
   ]);
   var stopPoints = [{ x: 2, y: 1 }];
   var result1 = runSearch(graph, [0,0], [2,2], 10, stopPoints);
-  equal (result1.text, "(0,1)(0,2)(1,2)(2,2)", "stop point after full movement amount should jump turns value (2,1 vs 1,10)");
+  equal (result1.text, "(0,1)(0,2)(1,2)(2,2)", "Stop point after full movement amount should jump turns value (2,1 vs 1,10)");
+
+});
+
+test( "Pathfinding with partial stop points", function() {
+
+  var graph = new Graph([
+      [1,3,0],
+      [1,1,0],
+      [0,1,1]
+  ]);
+  var partialStopPoints = [{ x: 1, y: 0, partialStopPoint: true } ];
+  var result1 = runSearch(graph, [0,0], [2,2], 5, undefined, undefined, undefined, partialStopPoints);
+  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid partial stop point when no allowed moves are given.");
+
+  var graph = new Graph([
+      [1,3,0],
+      [1,1,0],
+      [0,1,1]
+  ]);
+  var partialStopPoints = [{ x: 0, y: 0, partialStopPoint: true, allowedMoves: [{ x: 0, y: 1 }] } ];
+  var result1 = runSearch(graph, [0,0], [2,2], 4, undefined, undefined, undefined, partialStopPoints);
+  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid partial stop point despite traversing a high weight.");
+
+  var graph = new Graph([
+      [1,3,3],
+      [1,0,1],
+      [1,1,1]
+  ]);
+  var partialStopPoints = [{ x: 1, y: 0, partialStopPoint: true, allowedMoves: [{ x: 2, y: 0 }] } ];
+  var result1 = runSearch(graph, [0,0], [2,2], 3, undefined, undefined, undefined, partialStopPoints);
+  equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "Take partial stop point to avoid higher weight.");
+
+  var graph = new Graph([
+      [1,1,0],
+      [0,1,2],
+      [0,1,1]
+  ]);
+  var partialStopPoints = [{ x: 1, y: 1, partialStopPoint: true, allowedMoves: [{ x: 2, y: 1 }, { x: 1, y: 2 }] } ];
+  var result1 = runSearch(graph, [0,0], [2,2], 3, undefined, undefined, undefined, partialStopPoints);
+  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid higher weight after partial stop point provides two allowed moves.");
+
+  var graph = new Graph([
+      [1,1,0],
+      [1,1,0],
+      [0,1,1]
+  ]);
+  var partialStopPoints = [{ x: 0, y: 0, partialStopPoint: true, allowedMoves: [{ x: 0, y: 1 }] } ];
+  var result1 = runSearch(graph, [0,0], [2,2], 1, undefined, undefined, undefined, partialStopPoints);
+  equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Use partial stop point due to low movement causing no effect.");
 
 });
 
@@ -1051,14 +1100,14 @@ function nodeInResult(pair, array) {
   return false;
 }
 
-function runSearch(graph, start, end, maxPerTurn, stopPoints, barriers, options) {
+function runSearch(graph, start, end, maxPerTurn, stopPoints, barriers, options, partialStopPoints) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
   }
   start = graph.grid[start[0]][start[1]];
   end = graph.grid[end[0]][end[1]];
   var sTime = new Date(),
-    result = astar.search(graph, start, end, maxPerTurn, stopPoints, barriers, options),
+    result = astar.search(graph, start, end, maxPerTurn, stopPoints, barriers, options, partialStopPoints),
     eTime = new Date();
   return {
     result: result,
