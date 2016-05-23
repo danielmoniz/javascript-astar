@@ -100,7 +100,7 @@ var astar = {
     * Example barrier: { start: { x: 0, y: 0 }, blocked: { x: 0, y: 1 } }
     * This example prevents pathing from 'start' to 'blocked'.
     */
-    findReachablePoints: function(graph, start, maxPerTurn, stopPoints, turns, barriers, partialStopPoints) {
+    findReachablePoints: function(graph, start, maxPerTurn, stopPoints, turns, barriers, partialStopPoints, options) {
         if (!maxPerTurn) return [];
         astar.init(graph, barriers, stopPoints, partialStopPoints);
 
@@ -206,7 +206,7 @@ var astar = {
     * @param {Function} [options.heuristic] Heuristic function (see
     *          astar.heuristics).
     */
-    search: function(graph, start, end, maxPerTurn, stopPoints, barriers, options, partialStopPoints) {
+    search: function(graph, start, end, maxPerTurn, stopPoints, barriers, partialStopPoints, options) {
         astar.init(graph, barriers, stopPoints, partialStopPoints);
 
         options = options || {};

@@ -168,7 +168,7 @@ test( "Pathfinding with partial stop points", function() {
       [0,1,1]
   ]);
   var partialStopPoints = [{ x: 1, y: 0, partialStopPoint: true } ];
-  var result1 = runSearch(graph, [0,0], [2,2], 5, undefined, undefined, undefined, partialStopPoints);
+  var result1 = runSearch(graph, [0,0], [2,2], 5, undefined, undefined, partialStopPoints);
   equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid partial stop point when no allowed moves are given.");
 
   var graph = new Graph([
@@ -177,7 +177,7 @@ test( "Pathfinding with partial stop points", function() {
       [0,1,1]
   ]);
   var partialStopPoints = [{ x: 0, y: 0, partialStopPoint: true, allowedMoves: [{ x: 0, y: 1 }] } ];
-  var result1 = runSearch(graph, [0,0], [2,2], 4, undefined, undefined, undefined, partialStopPoints);
+  var result1 = runSearch(graph, [0,0], [2,2], 4, undefined, undefined, partialStopPoints);
   equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid partial stop point despite traversing a high weight.");
 
   var graph = new Graph([
@@ -186,7 +186,7 @@ test( "Pathfinding with partial stop points", function() {
       [1,1,1]
   ]);
   var partialStopPoints = [{ x: 1, y: 0, partialStopPoint: true, allowedMoves: [{ x: 2, y: 0 }] } ];
-  var result1 = runSearch(graph, [0,0], [2,2], 3, undefined, undefined, undefined, partialStopPoints);
+  var result1 = runSearch(graph, [0,0], [2,2], 3, undefined, undefined, partialStopPoints);
   equal (result1.text, "(1,0)(2,0)(2,1)(2,2)", "Take partial stop point to avoid higher weight.");
 
   var graph = new Graph([
@@ -195,7 +195,7 @@ test( "Pathfinding with partial stop points", function() {
       [0,1,1]
   ]);
   var partialStopPoints = [{ x: 1, y: 1, partialStopPoint: true, allowedMoves: [{ x: 2, y: 1 }, { x: 1, y: 2 }] } ];
-  var result1 = runSearch(graph, [0,0], [2,2], 3, undefined, undefined, undefined, partialStopPoints);
+  var result1 = runSearch(graph, [0,0], [2,2], 3, undefined, undefined, partialStopPoints);
   equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid higher weight after partial stop point provides two allowed moves.");
 
   var graph = new Graph([
@@ -204,7 +204,7 @@ test( "Pathfinding with partial stop points", function() {
       [0,1,1]
   ]);
   var partialStopPoints = [{ x: 0, y: 0, partialStopPoint: true, allowedMoves: [{ x: 0, y: 1 }] } ];
-  var result1 = runSearch(graph, [0,0], [2,2], 1, undefined, undefined, undefined, partialStopPoints);
+  var result1 = runSearch(graph, [0,0], [2,2], 1, undefined, undefined, partialStopPoints);
   equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Use partial stop point due to low movement causing no effect.");
 
 });
@@ -336,7 +336,7 @@ test( "Pathfinding to closest", function() {
       [1,1,1,1],
       [0,1,1,0],
       [0,0,1,1]
-  ], [0,0], [2,1], undefined, [], [], {closest: true});
+  ], [0,0], [2,1], undefined, [], [], [], {closest: true});
 
   equal (result1.text, "(0,1)(1,1)", "Result is expected - pathed to closest node");
 
@@ -344,7 +344,7 @@ test( "Pathfinding to closest", function() {
       [1,0,1,1],
       [0,1,1,0],
       [0,0,1,1]
-  ], [0,0], [2,1], undefined, [], [], {closest: true});
+  ], [0,0], [2,1], undefined, [], [], [], {closest: true});
 
   equal (result2.text, "", "Result is expected - start node was closest node");
 
@@ -352,7 +352,7 @@ test( "Pathfinding to closest", function() {
       [1,1,1,1],
       [0,1,1,0],
       [0,1,1,1]
-  ], [0,0], [2,1], undefined, [], [], {closest: true});
+  ], [0,0], [2,1], undefined, [], [], [], {closest: true});
 
   equal (result3.text, "(0,1)(1,1)(2,1)", "Result is expected - target node was reachable");
 });
@@ -442,7 +442,7 @@ test( "GPS Pathfinding", function() {
     return node0.GPSDistance(node1);
   };
 
-  var result = astar.search(graph, start, end, undefined, [], [], {heuristic: GPSheuristic});
+  var result = astar.search(graph, start, end, undefined, [], [], undefined, {heuristic: GPSheuristic});
   equal(result.length, 3, "Cannes is 3 cities away from Paris");
   equal(result[0].name, "Lyon", "City #1 is Lyon");
   equal(result[1].name, "Marseille", "City #2 is Marseille");
@@ -1100,14 +1100,14 @@ function nodeInResult(pair, array) {
   return false;
 }
 
-function runSearch(graph, start, end, maxPerTurn, stopPoints, barriers, options, partialStopPoints) {
+function runSearch(graph, start, end, maxPerTurn, stopPoints, barriers, partialStopPoints, options) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
   }
   start = graph.grid[start[0]][start[1]];
   end = graph.grid[end[0]][end[1]];
   var sTime = new Date(),
-    result = astar.search(graph, start, end, maxPerTurn, stopPoints, barriers, options, partialStopPoints),
+    result = astar.search(graph, start, end, maxPerTurn, stopPoints, barriers, partialStopPoints, options),
     eTime = new Date();
   return {
     result: result,
@@ -1116,7 +1116,7 @@ function runSearch(graph, start, end, maxPerTurn, stopPoints, barriers, options,
   };
 }
 
-function runReachable(graph, start, maxPerTurn, stopPoints, turns, barriers) {
+function runReachable(graph, start, maxPerTurn, stopPoints, turns, barriers, partialStopPoints) {
   if (!(graph instanceof Graph)) {
     graph = new Graph(graph);
   }
