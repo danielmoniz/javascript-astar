@@ -52,52 +52,38 @@ test( "Pathfinding", function() {
   equal (result1.text, "(0,1)(1,1)(1,2)(2,2)(2,3)", "Result is expected");
 });
 
-test( "isNeighborStopPoint", function() {
+test( "isNodePartialStopPointInThisDirection", function() {
 
   var currentNode = { x: 0, y: 0};
   var neighbor = { x: 0, y: 1 };
-  var result1 = astar.isNeighborStopPoint(currentNode, neighbor);
+  var result1 = astar.isNodePartialStopPointInThisDirection(currentNode, neighbor);
   equal (result1, false, "Return false if currentNode is not a stop point or partial stop point");
 
   var currentNode = { x: 0, y: 0, stopPoint: true };
   var neighbor = { x: 0, y: 1 };
-  var result1 = astar.isNeighborStopPoint(currentNode, neighbor);
+  var result1 = astar.isNodePartialStopPointInThisDirection(currentNode, neighbor);
   equal (result1, false, "Return false if currentNode is a stop point but not partial stop point");
-
-  var currentNode = { x: 0, y: 0 };
-  var neighbor = { x: 0, y: 1, stopPoint: true };
-  var result1 = astar.isNeighborStopPoint(currentNode, neighbor);
-  equal (result1, true, "Return true if neighbor is stop point");
-
-  var currentNode = { x: 0, y: 0, stopPoint: true };
-  var neighbor = { x: 0, y: 1, stopPoint: true };
-  var result1 = astar.isNeighborStopPoint(currentNode, neighbor);
-  equal (result1, true, "Return true if both currentNode and neighbor are stop points");
-
-});
-
-test( "isNeighborStopPoint with partial stop points", function() {
 
   var neighbor = { x: 0, y: 1 };
   var currentNode = { x: 0, y: 0, partialStopPoint: true };
-  var result1 = astar.isNeighborStopPoint(currentNode, neighbor);
+  var result1 = astar.isNodePartialStopPointInThisDirection(currentNode, neighbor);
   equal (result1, true, "Return true if currentNode is a stop point but lists no allowed moves");
 
   var neighbor = { x: 0, y: 1 };
   var allowed = { x: 7, y: 5 };
   var currentNode = { x: 0, y: 0, partialStopPoint: true, allowedMoves: allowed };
-  var result1 = astar.isNeighborStopPoint(currentNode, neighbor);
+  var result1 = astar.isNodePartialStopPointInThisDirection(currentNode, neighbor);
   equal (result1, true, "Return true if currentNode is a stop point but lists no relevant allowed moves");
 
   var neighbor = { x: 0, y: 1 };
   var currentNode = { x: 0, y: 0, partialStopPoint: true, allowedMoves: [neighbor] };
-  var result1 = astar.isNeighborStopPoint(currentNode, neighbor);
+  var result1 = astar.isNodePartialStopPointInThisDirection(currentNode, neighbor);
   equal (result1, false, "Return false if currentNode is a stop point but lists coordinates of neighbour");
 
   var neighbor = { x: 0, y: 1 };
   var allowed = [{ x: 7, y: 5 }, neighbor];
   var currentNode = { x: 0, y: 0, partialStopPoint: true, allowedMoves: allowed };
-  var result1 = astar.isNeighborStopPoint(currentNode, neighbor);
+  var result1 = astar.isNodePartialStopPointInThisDirection(currentNode, neighbor);
   equal (result1, false, "Return false if currentNode is a stop point but lists multiple coordinates including neighbour");
 
 });
@@ -205,7 +191,7 @@ test( "Pathfinding with partial stop points", function() {
   ]);
   var partialStopPoints = [{ x: 0, y: 0, partialStopPoint: true, allowedMoves: [{ x: 0, y: 1 }] } ];
   var result1 = runSearch(graph, [0,0], [2,2], 1, undefined, undefined, partialStopPoints);
-  equal (result1.text, "(1,0)(1,1)(2,1)(2,2)", "Use partial stop point due to low movement causing no effect.");
+  equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Use partial stop point due to low movement causing no effect.");
 
 });
 
@@ -659,6 +645,71 @@ test('Find reachable locations', function() {
 
   ok(resultConsistsOf([[0,1], [1,0]], result.result),
     'Multiple barriers limit the reachable tiles');
+
+  var partialStopPoints = [
+    { x: 0, y: 1, partialStopPoint: true, },
+  ];
+  var stopPoints = [];
+  var maxPerTurn = 2;
+  var turns = 1;
+  var barriers = [];
+  var result = runReachable([
+      [0,1,1],
+      [1,0,0],
+      [1,0,0],
+  ], [0,0], maxPerTurn, stopPoints, turns, barriers, partialStopPoints);
+
+  ok(resultConsistsOf(result.result, [[1,0],[0,1],[2,0]]),
+    "Partial stop point limits the reachable tiles.");
+
+  var partialStopPoints = [
+    { x: 0, y: 0, partialStopPoint: true, },
+  ];
+  var stopPoints = [];
+  var maxPerTurn = 2;
+  var turns = 1;
+  var barriers = [];
+  var result = runReachable([
+      [0,1,1],
+      [1,0,0],
+      [1,0,0],
+  ], [0,0], maxPerTurn, stopPoints, turns, barriers, partialStopPoints);
+
+  ok(resultConsistsOf(result.result, []),
+    "Partial stop point with no allowed moves at start position prevents reaching any tiles.");
+
+  var partialStopPoints = [
+    { x: 0, y: 0, partialStopPoint: true, allowedMoves: [{ x: 0, y: 1 }], },
+  ];
+  var stopPoints = [];
+  var maxPerTurn = 2;
+  var turns = 1;
+  var barriers = [];
+  var result = runReachable([
+      [0,1,1],
+      [1,0,0],
+      [1,0,0],
+  ], [0,0], maxPerTurn, stopPoints, turns, barriers, partialStopPoints);
+
+  ok(resultConsistsOf(result.result, [[0,1],[0,2]]),
+    "Partial stop point with allowed move at start position limits the reachable tiles.");
+
+
+  var partialStopPoints = [
+    { x: 1, y: 1, partialStopPoint: true, allowedMoves: [{ x: 1, y: 2 }, { x: 2, y: 1 }], },
+  ];
+  var stopPoints = [];
+  var maxPerTurn = 3;
+  var turns = 1;
+  var barriers = [];
+  var result = runReachable([
+      [0,1,0],
+      [0,1,1],
+      [0,1,0],
+  ], [0,0], maxPerTurn, stopPoints, turns, barriers, partialStopPoints);
+
+  ok(resultConsistsOf(result.result, [[0,1],[1,1],[2,1],[1,2]]),
+    "Partial stop point with multiple allowed moves allows access to those tiles.");
 
 });
 
@@ -1122,7 +1173,7 @@ function runReachable(graph, start, maxPerTurn, stopPoints, turns, barriers, par
   }
   start = graph.grid[start[0]][start[1]];
   var sTime = new Date(),
-    result = astar.findReachablePoints(graph, start, maxPerTurn, stopPoints, turns, barriers),
+    result = astar.findReachablePoints(graph, start, maxPerTurn, stopPoints, turns, barriers, partialStopPoints),
     eTime = new Date();
   return {
     result: result,

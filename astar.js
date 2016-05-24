@@ -104,6 +104,8 @@ var astar = {
         if (!maxPerTurn) return [];
         astar.init(graph, barriers, stopPoints, partialStopPoints);
 
+        // @TODO Use options parameter
+
         if (!turns) turns = 1;
 
         var reachable = [];
@@ -156,8 +158,12 @@ var astar = {
 
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
-                var stopPoint = this.isNeighborStopPoint(currentNode, neighbor);
-                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), stopPoint),
+                var currentGScore = currentNode.g;
+                if (this.isNodePartialStopPointInThisDirection(currentNode, neighbor)) {
+                    currentGScore = roundScoreUp(currentNode.g);
+                }
+
+                var gScore = currentGScore.addSingleSpace(neighbor.getCost(currentNode), neighbor.stopPoint),
                     beenVisited = neighbor.visited;
 
                 if (gScore === false) continue;
@@ -262,8 +268,12 @@ var astar = {
 
                 // The g score is the shortest distance from start to current node.
                 // We need to check if the path we have arrived at this neighbor is the shortest one we have seen yet.
-                var stopPoint = this.isNeighborStopPoint(currentNode, neighbor);
-                var gScore = currentNode.g.addSingleSpace(neighbor.getCost(currentNode), stopPoint),
+                var currentGScore = currentNode.g;
+                if (this.isNodePartialStopPointInThisDirection(currentNode, neighbor)) {
+                    currentGScore = roundScoreUp(currentNode.g);
+                }
+
+                var gScore = currentGScore.addSingleSpace(neighbor.getCost(currentNode), neighbor.stopPoint),
                     beenVisited = neighbor.visited;
 
                 if (gScore === false) continue;
@@ -306,16 +316,15 @@ var astar = {
         return [];
     },
 
-    isNeighborStopPoint: function(currentNode, neighbor) {
-        var stopPoint = neighbor.stopPoint || false;
-        if (!stopPoint && currentNode.partialStopPoint) {
-            stopPoint = true;
+    isNodePartialStopPointInThisDirection: function(currentNode, neighbor) {
+        var stopPoint = false;
+        if (currentNode.partialStopPoint) {
             if (!currentNode.allowedMoves) return true;
+            stopPoint = true;
             for (var i in currentNode.allowedMoves) {
                 var move = currentNode.allowedMoves[i];
                 if (move.x == neighbor.x && move.y == neighbor.y) {
-                    stopPoint = false;
-                    break;
+                    return false;
                 }
             }
         }
@@ -498,6 +507,26 @@ Score.prototype.valueOf = function(turns, extraWeight) {
     return this.hugeNum * this.turns + this.extraWeight;
   }
   return this.hugeNum * turns + extraWeight;
+};
+
+function roundScoreUp(score) {
+  console.log(score);
+  var maxPerTurn = score.maxPerTurn;
+  var newScore = new Score(0);
+
+  if (typeof maxPerTurn == 'object') {
+    var firstTurnMax = maxPerTurn[0];
+    var futureTurnsMax = maxPerTurn[0];
+    if (maxPerTurn.length > 1) {
+      var futureTurnsMax = maxPerTurn.slice(1);
+    }
+
+    newScore.setValues(score.turns + 1, firstTurnMax, futureTurnsMax);
+  } else if (typeof maxPerTurn == 'number') {
+    newScore.setValues(score.turns, maxPerTurn, maxPerTurn);
+  }
+
+  return newScore;
 };
 
 /**
