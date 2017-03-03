@@ -222,7 +222,7 @@ var astar = {
         var openHeap = getHeap(),
             closestNode = start; // set the start node to be the closest if required
 
-        start.h = new Score(heuristic(start, end), maxPerTurn);
+        start.h = getScoreFromDistance(heuristic(start, end), maxPerTurn);
 
         openHeap.push(start);
 
@@ -258,9 +258,10 @@ var astar = {
 
                 if (currentNode.g == 0) {
                   if (currentNode == start) {
-                    currentNode.g = new Score(0, maxPerTurn);
+                    currentNode.g = new Score(0, 0, maxPerTurn);
                   } else {
-                    currentNode.g = new Score(0, maxPerTurn, currentNode.stopPoint);
+                    //currentNode.g = new Score(0, 0, maxPerTurn, currentNode.stopPoint);
+                    currentNode.g = new Score(0, 0, maxPerTurn, 0);
                   }
                 } else if (currentNode.g === undefined) {
                   throw new Error('BadValue', 'currentNode.g cannot be undefined. Check that start node belongs to this graph.');
@@ -278,20 +279,21 @@ var astar = {
 
                 if (gScore === false) continue;
 
-                if (!beenVisited || gScore < neighbor.g) {
+                if (!beenVisited || gScore.valueOf() < neighbor.g.valueOf()) {
 
                     // Found an optimal (so far) path to this node.  Take score for node to see how good it is.
                     neighbor.visited = true;
                     neighbor.parent = currentNode;
-                    neighbor.h = neighbor.h || new Score(heuristic(neighbor, end), maxPerTurn);
+                    neighbor.h = neighbor.h || getScoreFromDistance(heuristic(neighbor, end), maxPerTurn);
                     neighbor.g = gScore;
-                    neighbor.f = neighbor.g.add(neighbor.h);
+                    neighbor.f = neighbor.g.addScore(neighbor.h);
                     //neighbor.turns = gScore.turns;
 
                     if (closest) {
                         // If the neighbour is closer than the current closestNode or if it's equally close but has
                         // a cheaper path than the current closest node then it becomes the closest node
-                        if (neighbor.h < closestNode.h || (neighbor.h == closestNode.h && neighbor.g < closestNode.g)) {
+                        if (neighbor.h.valueOf() < closestNode.h.valueOf() ||
+                          (neighbor.h.valueOf() == closestNode.h.valueOf() && neighbor.g.valueOf() < closestNode.g.valueOf())) {
                             closestNode = neighbor;
                         }
                     }
@@ -377,155 +379,166 @@ var astar = {
  *
  * See README for more information.
  */
-function Score(score, maxPerTurn, stopPoint) {
-  if ((typeof score != 'number' && typeof score != 'object') || score === undefined) {
-    throw new Error('BadParam', 'score value must be a number or another score object.');
+function Score(turns, extraWeight, maxPerTurn, totalDistance) {
+  console.log('---');
+  console.log(turns);
+  console.log(turns != 0 % 1);
+  console.log(extraWeight);
+  console.log(maxPerTurn);
+  console.log(totalDistance);
+  if (turns && (typeof turns != 'number' || turns % 1 != 0 || turns < 0)) {
+    throw new Error('BadParam', 'turns must be a nonnegative integer.');
+  }
+  if (extraWeight && (typeof extraWeight != 'number' || extraWeight < 0 || (extraWeight > 0 && extraWeight < 1))) {
+    throw new Error('BadParam', 'extraWeight must be a nonnegative number.');
+  }
+  if (maxPerTurn &&
+      ((typeof maxPerTurn != 'number' || (maxPerTurn < 0 || maxPerTurn % 1 != 0)) &&
+      (typeof maxPerTurn != 'object' || !maxPerTurn.length))) {
+    throw new Error('BadParam', 'maxPerTurn must be a non-negative number or a non-empty list.');
+  }
+  if (totalDistance && (typeof totalDistance != 'number' || totalDistance < 0)) {
+    throw new Error('BadParam', 'totalDistance must be a nonnegative number.');
   }
 
-  this.hugeNum = 1000000;
-  if (!maxPerTurn) maxPerTurn = this.hugeNum;
-  this.maxPerTurn = maxPerTurn;
+  this.turns = turns || 0;
+  this.extraWeight = extraWeight || 0;
+  this.maxPerTurn = maxPerTurn || 0;
+  this.totalDistance = totalDistance || 0;
+}
 
-  var turns = Math.floor(score / this.hugeNum);
-  var extraWeight = score % this.hugeNum;
+Score.prototype.copy = function() {
+  return new Score(this.turns, this.extraWeight, this.maxPerTurn, this.totalDistance);
+}
 
-  if (typeof maxPerTurn == 'object') {
-    var firstTurnMax = maxPerTurn[0];
-    var futureTurnsMax = maxPerTurn[0];
+function getScoreFromDistance(distance, maxPerTurn, stopPoint) {
+  if (typeof distance != 'number' || distance === undefined) {
+    throw new Error('BadParam', 'distance parameter must be a number.');
+  }
+  if (maxPerTurn && typeof maxPerTurn != 'number' && typeof maxPerTurn != 'object') {
+    throw new Error('BadParam', 'maxPerTurn must be a number or list.');
+  }
+
+  if (maxPerTurn === undefined) maxPerTurn = [0];
+  if (typeof maxPerTurn == 'number') maxPerTurn = [maxPerTurn];
+
+  var firstTurnMax = maxPerTurn[0];
+  var futureTurnsMax = maxPerTurn[0];
+  if (maxPerTurn.length > 1) {
+    futureTurnsMax = maxPerTurn.slice(1);
+  }
+
+  var turns = 0;
+  var extraWeight = distance;
+  while(extraWeight > firstTurnMax) {
+    // can spend entire first turn on the extra weight available
+    extraWeight -= firstTurnMax;
+    turns += 1;
+
+    maxPerTurn = futureTurnsMax;
+    firstTurnMax = maxPerTurn[0];
     if (maxPerTurn.length > 1) {
-      var futureTurnsMax = maxPerTurn.slice(1);
+      futureTurnsMax = maxPerTurn.slice(1);
     }
-
-    if (extraWeight > firstTurnMax) {
-      // can spend entire first turn on the extra weight available
-      extraWeight -= firstTurnMax;
-      turns += 1;
-      var value = this.valueOf(turns, extraWeight);
-      var newScore = new Score(value, futureTurnsMax, stopPoint);
-      this.setValues(newScore.turns, newScore.extraWeight, futureTurnsMax);
-      return;
-
-    } else {
-      if (stopPoint && extraWeight < firstTurnMax) extraWeight = firstTurnMax;
-      this.setValues(turns, extraWeight, maxPerTurn);
-      return;
-    }
-
-    // otherwise, build score object as normal
-  } else if (typeof maxPerTurn == 'number') {
-    var addedTurns = Math.max(Math.ceil(extraWeight / maxPerTurn), 1) - 1;
-    turns += addedTurns;
-    extraWeight = extraWeight - addedTurns * maxPerTurn;
-    if (stopPoint && extraWeight < maxPerTurn) extraWeight = maxPerTurn;
-    this.setValues(turns, extraWeight, this.maxPerTurn);
-  } else {
-    throw new Error('BadParam', 'maxPerTurn must be an array or a number.');
   }
 
+  if (stopPoint) extraWeight = firstTurnMax;
+  return new Score(turns, extraWeight, maxPerTurn, distance);
 }
 
 /*
  * Returns a new score object that has had a value added correctly,
  * as if 'addition' is the weight for a single space.
- * Will return false if movement to that space is impossible.
+ * Will return false if movement to that space is impossible within the
+ * current turn or the next one.
  */
 Score.prototype.addSingleSpace = function(addition, stopPoint) {
   if (typeof addition != 'number') throw new Error('BadParam', 'Must specify amount to add.');
 
-  var maxPerTurnValue = this.maxPerTurn;
-  if (maxPerTurnValue.length) maxPerTurnValue = this.maxPerTurn[0];
+  var maxPerTurn = this.maxPerTurn,
+      turns = this.turns,
+      extraWeight = this.extraWeight,
+      distance = this.distance + addition;
 
-  if (typeof this.maxPerTurn == 'number' || (this.maxPerTurn.length && this.maxPerTurn.length <= 1)) {
-    // do or die  - if addition is too high, move is impossible
-    if (addition > maxPerTurnValue) {
+  if (addition + extraWeight > maxPerTurn[0]) {
+    if (maxPerTurn.length > 1) maxPerTurn = maxPerTurn.slice(1);
+
+    // @TODO Test this case! Specifically, test when a tile has weight too
+    // large for both the current maxPerTurn value and the next one.
+    if (addition > maxPerTurn[0]) {
+      //if (maxPerTurn.length == 1) return false;
       return false;
     }
+    turns += 1;
+    extraWeight = addition;
+  } else {
+    extraWeight += addition;
   }
 
-  if (addition + this.extraWeight > maxPerTurnValue) {
-    var maxPerTurn = this.maxPerTurn;
-    if (maxPerTurn.length && maxPerTurn.length > 1) {
-      maxPerTurn = maxPerTurn.slice(1);
-    } else if (maxPerTurn.length && maxPerTurn.length <= 1) {
-      maxPerTurn = maxPerTurn[0];
-    }
-    var newValue = this.valueOf(this.turns + 1, 0);
-    var newScore = new Score(newValue, maxPerTurn);
-    return newScore.addSingleSpace(addition, stopPoint);
+  if (stopPoint) extraWeight = maxPerTurn[0];
 
-  }
-
-  var extraWeight = this.extraWeight + addition;
-  var newValue = this.valueOf(this.turns, extraWeight);
-  var newScore = new Score(newValue, this.maxPerTurn, stopPoint);
-  return newScore;
-
+  return new Score(turns, extraWeight, maxPerTurn, distance);
 };
 
 /*
  * Returns a new score object that has had a value added correctly,
  * as if 'addition' is a total weight and not the weight for a single space.
  * Eg. 'addition' could represent the total weight of a path.
- * 'addition' must not be falsy (including 0).
+ * 'addition' must be a positive number.
  */
-Score.prototype.add = function(addition) {
+Score.prototype.addDistance = function(addition) {
   if (!addition) throw new Error('BadParam', 'Must specify amount to add.');
   if (addition < 0) throw new Error('BadParam', 'Must provide a positive value.');
 
-  var newScore = new Score(addition, this.maxPerTurn);
-  var totalExtraWeight = this.extraWeight + newScore.extraWeight;
-  this.maxPerTurn = newScore.maxPerTurn;
-  var maxPerTurnValue = this.maxPerTurn;
-  if (maxPerTurnValue.length) maxPerTurnValue = this.maxPerTurn[0];
+  var maxPerTurn = this.maxPerTurn,
+      turns = this.turns,
+      extraWeight = this.extraWeight,
+      distance = this.distance + addition;
 
-  if (totalExtraWeight > maxPerTurnValue) {
-    var remainingWeight = totalExtraWeight - maxPerTurnValue;
-    var maxPerTurn = this.maxPerTurn;
-    if (maxPerTurn.length && maxPerTurn.length > 1) maxPerTurn = maxPerTurn.slice(1);
-
-    var turns = this.turns + newScore.turns + 1;
-    var value = this.valueOf(turns, remainingWeight);
-    var resultScore = new Score(value, maxPerTurn);
-    return resultScore;
-
-  } else {
-    // simply return the two after adding their properties
-    var sum = this.valueOf() + newScore.valueOf();
-    return new Score(sum, this.maxPerTurn);
+  var remainingWeight = extraWeight + addition;
+  while(remainingWeight + extraWeight > maxPerTurn[0]) {
+    var delta = maxPerTurn[0] - extraWeight;
+    distance += delta;
+    remainingWeight -= delta;
+    turns += 1;
+    extraWeight = 0;
+    if (maxPerTurn.length > 1) maxPerTurn = maxPerTurn.slice(1);
   }
 
+  extraWeight += remainingWeight;
+  distance += remainingWeight;
+
+  return new Score(turns, extraWeight, maxPerTurn, distance);
 };
 
-Score.prototype.setValues = function(turns, extraWeight, maxPerTurn) {
-  this.turns = turns;
-  this.extraWeight = extraWeight;
-  this.maxPerTurn = maxPerTurn;
+/*
+ * Returns a new score object that is the added result of two scores.
+ */
+Score.prototype.addScore = function(score) {
+  var newScore = new Score(
+    this.turns + score.turns,
+    this.extraWeight + score.extraWeight,
+    this.distance + score.distance);
+  return newScore;
 };
 
-Score.prototype.valueOf = function(turns, extraWeight) {
-  if (turns === undefined || extraWeight === undefined) {
-    return this.hugeNum * this.turns + this.extraWeight;
+Score.prototype.valueOf = function() {
+  var hugeNum = 1000000;
+  return hugeNum * this.turns + this.extraWeight;
+};
+
+Score.prototype.roundUp = function() {
+  var maxPerTurn = this.maxPerTurn;
+
+  var firstTurnMax = maxPerTurn[0];
+  var futureTurnsMax = maxPerTurn[0];
+  if (maxPerTurn.length > 1) {
+    var futureTurnsMax = maxPerTurn.slice(1);
   }
-  return this.hugeNum * turns + extraWeight;
-};
 
-function roundScoreUp(score) {
-  console.log(score);
-  var maxPerTurn = score.maxPerTurn;
-  var newScore = new Score(0);
+  newScore.setValues(this.turns + 1, firstTurnMax, futureTurnsMax);
 
-  if (typeof maxPerTurn == 'object') {
-    var firstTurnMax = maxPerTurn[0];
-    var futureTurnsMax = maxPerTurn[0];
-    if (maxPerTurn.length > 1) {
-      var futureTurnsMax = maxPerTurn.slice(1);
-    }
-
-    newScore.setValues(score.turns + 1, firstTurnMax, futureTurnsMax);
-  } else if (typeof maxPerTurn == 'number') {
-    newScore.setValues(score.turns, maxPerTurn, maxPerTurn);
-  }
-
+  //var newScore = new Score(this.turns + 1, );
   return newScore;
 };
 

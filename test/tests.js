@@ -8,6 +8,7 @@ test( "Sanity Checks", function() {
 
 test( "Basic Horizontal", function() {
 
+
   var result1 = runSearch([[1],[1]], [0,0], [1,0]);
   equal (result1.text, "(1,0)", "One step down");
 
@@ -16,6 +17,7 @@ test( "Basic Horizontal", function() {
 
   var result3 = runSearch([[1],[1],[1],[1]], [0,0], [3,0]);
   equal (result3.text, "(1,0)(2,0)(3,0)", "Three steps down");
+
 
 });
 
@@ -89,6 +91,7 @@ test( "isNodePartialStopPointInThisDirection", function() {
 });
 
 test( "Pathfinding with stop points", function() {
+  console.log('-----------------');
 
   var graph = new Graph([
       [1,1,0],
@@ -98,6 +101,7 @@ test( "Pathfinding with stop points", function() {
   var stopPoints = [{ x: 1, y: 0 }];
   var result1 = runSearch(graph, [0,0], [2,2], 2, stopPoints);
   equal (result1.text, "(0,1)(1,1)(2,1)(2,2)", "Avoid stop point due to high movement value");
+  console.log('=================');
 
   var graph = new Graph([
       [1,3,0],
@@ -715,48 +719,101 @@ test('Find reachable locations', function() {
 
 test( "Score (creation)", function() {
 
-  var score = new Score(0, 0);
-  equal(score.valueOf(), 0, 'score value is equal to score input when maxPerTurn is 0');
+  var score = new Score(0, 0, 0, 0);
+  ok(score, 'Score created successfully with all zero values');
 
-  var score = new Score(3, 0);
-  equal(score.valueOf(), 3, 'score value is equal to score input when maxPerTurn is 0');
-
-  var score = new Score(96, false);
-  equal(score.valueOf(), 96, 'score value is equal to score input when maxPerTurn is false');
-
-  var score = new Score(2567, undefined);
-  equal(score.valueOf(), 2567, 'score value is equal to score input when maxPerTurn is undefined');
-
-  var score = new Score(1000001, undefined);
-  equal(score.valueOf(), 1000001, 'score value is still equal to massive score input when maxPerTurn is undefined');
+  // turns -------
+  var score = new Score(undefined, 0, 0, 0);
+  equal(score.turns, 0, 'turns evaluates to 0 when fed value of undefined');
 
   throws(function() {
-    var score = new Score(undefined, false);
-  }, Error('BadParam'), 'throws error when fed value of undefined for score');
+    var score = new Score(-1, 0, 0, 0);
+  }, Error('BadParam'), 'throws error when fed negative value for turns');
 
-  var maxPerTurn = [8, 4];
-  var score = new Score(12, maxPerTurn);
-  ok(true, 'Score class can handle array values for maxPerTurn');
+  throws(function() {
+    var score = new Score(3.5, 0, 0, 0);
+  }, Error('BadParam'), 'throws error when fed decimal value for turns');
 
-  var maxPerTurn = [8, 4, 6];
-  var score = new Score(19, maxPerTurn);
-  ok(true, 'Score class can handle array values for maxPerTurn');
+  throws(function() {
+    var score = new Score([], 0, 0, 0);
+  }, Error('BadParam'), 'throws error when fed object for turns');
 
-  var maxPerTurn = [0, 2, 5];
-  var score = new Score(0, maxPerTurn);
-  equal(score.valueOf(), 0, 'A score with an initial maxPerTurn element of 0 and a zero input will still evaluate to 0');
+  // extraWeight -------
+  var score = new Score(0, undefined, 0, 0);
+  equal(score.turns, 0, 'extraWeight evaluates to 0 when fed value of undefined');
 
-  var maxPerTurn = [0, 2, 5];
-  var score = new Score(1, maxPerTurn);
-  equal(score.valueOf(), 1000001, 'A score with an initial maxPerTurn element of 0 will bump turn count');
+  throws(function() {
+    var score = new Score(0, -1, 0, 0);
+  }, Error('BadParam'), 'throws error when fed negative value for extraWeight');
 
-  var maxPerTurn = [2, 0, 5];
-  var score = new Score(3, maxPerTurn);
-  equal(score.valueOf(), 2000001, 'A score with a later maxPerTurn element of 0 will bump turn count');
+  var score = new Score(0, 1.5, 0, 0);
+  ok(score, 'Score created successfully with a decimal value for extraWeight');
+
+  throws(function() {
+    var score = new Score(0, 0.5, 0, 0);
+  }, Error('BadParam'), 'throws error when fed decimal value between 0 and 1 (exclusive) for extraWeight');
+
+  throws(function() {
+    var score = new Score([], 0, 0, 0);
+  }, Error('BadParam'), 'throws error when fed object for extraWeight');
+
+  // maxPerTurn -------
+  var score = new Score(0, 0, undefined, 0);
+  equal(score.turns, 0, 'maxPerTurn evaluates to 0 when fed value of undefined');
+
+  var score = new Score(0, 0, [8, 4], 0);
+  ok(score, 'Score class can handle array values for maxPerTurn');
+
+  throws(function() {
+    var score = new Score(0, 0, [], 0);
+  }, Error('BadParam'), 'throws error when fed empty list for maxPerTurn');
+
+  throws(function() {
+    var score = new Score(0, 0, true, 0);
+  }, Error('BadParam'), 'throws error when fed a non-number or object for maxPerTurn');
+
+  throws(function() {
+    var score = new Score(0, 0, -2, 0);
+  }, Error('BadParam'), 'throws error when fed negative numeric value for maxPerTurn');
+
+  throws(function() {
+    var score = new Score(0, 0, 2.5, 0);
+  }, Error('BadParam'), 'throws error when fed decimal value for maxPerTurn');
+
+  throws(function() {
+    var score = new Score(0, 0, 'test', 0);
+  }, Error('BadParam'), 'throws error when fed a string value for maxPerTurn');
+
+  // totalDistance -------
+  var score = new Score(0, 0, 0, undefined);
+  equal(score.turns, 0, 'totalDistance evaluates to 0 when fed value of undefined');
+
+  throws(function() {
+    var score = new Score(0, 0, 0, -1);
+  }, Error('BadParam'), 'throws error when fed a negative value for totalDistance');
+
+  throws(function() {
+    var score = new Score(0, 0, 0, [1]);
+  }, Error('BadParam'), 'throws error when fed a list for totalDistance');
 
 });
 
 test( "Score (valueOf)", function() {
+
+  var score = new Score(0, 0, 0);
+  equal(score.valueOf(), 0, 'score value is equal to score input when maxPerTurn is 0');
+
+  var score = new Score(0, 3, 0);
+  equal(score.valueOf(), 3, 'score value is equal to score input when maxPerTurn is 0');
+
+  var score = new Score(0, 96, false);
+  equal(score.valueOf(), 96, 'score value is equal to score input when maxPerTurn is false');
+
+  var score = new Score(0, 2567, undefined);
+  equal(score.valueOf(), 2567, 'score value is equal to score input when maxPerTurn is undefined');
+
+  var score = new Score(0, 100000001, undefined);
+  equal(score.valueOf(), 100000001, 'score value is still equal to massive score input when maxPerTurn is undefined');
 
   var score = new Score(0, 10);
   equal(score.valueOf(), 0, 'score valueOf is zero when score input is zero');
@@ -839,6 +896,18 @@ test( "Score (valueOf)", function() {
   var maxPerTurn = [7, 2, 5, 4, 5, 6, 6, 3];
   var score = new Score(36, maxPerTurn, 'stop point');
   equal(score.valueOf(), 7000003, 'score valueOf rounds up to nth maxPerTurn value if hitting a stop point after more than n turns');
+
+
+
+  var score = new Score(0, 0, [0, 2, 5]);
+  equal(score.valueOf(), 0, 'A score with an initial maxPerTurn element of 0 and a zero input will still evaluate to 0');
+
+  var score = new Score(0, 1, [0, 2, 5]);
+  equal(score.valueOf(), 1000001, 'A score with an initial maxPerTurn element of 0 will bump turn count');
+
+  var maxPerTurn = [2, 0, 5];
+  var score = new Score(3, maxPerTurn);
+  equal(score.valueOf(), 2000001, 'A score with a later maxPerTurn element of 0 will bump turn count');
 
 });
 
