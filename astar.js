@@ -534,11 +534,15 @@ function roundScoreUp(score) {
 * @param {Array} gridIn 2D array of input weights
 * @param {Object} [options]
 * @param {bool} [options.diagonal] Specifies whether diagonal moves are allowed
+* @param {bool} [options.hex] Specifies whether the grid represents a hex, allowing specific diagonal moves
 */
 function Graph(gridIn, options) {
     options = options || {};
     this.nodes = [];
     this.diagonal = !!options.diagonal;
+    this.hex = !!options.hex;
+    if (this.hex && this.diagonal) throw new Error('Should not specify both diagonal and hex for a Graph.');
+
     this.grid = [];
     for (var x = 0; x < gridIn.length; x++) {
         this.grid[x] = [];
@@ -601,6 +605,28 @@ Graph.prototype.neighbors = function(node) {
         if(grid[x+1] && grid[x+1][y+1]) {
             ret.push(grid[x+1][y+1]);
         }
+    }
+
+    if (this.hex) {
+        // // Southwest
+        // if(grid[x-1] && grid[x-1][y-1]) {
+        //     ret.push(grid[x-1][y-1]);
+        // }
+
+        // Southeast
+        if(grid[x+1] && grid[x+1][y-1]) {
+            ret.push(grid[x+1][y-1]);
+        }
+
+        // Northwest
+        if(grid[x-1] && grid[x-1][y+1]) {
+            ret.push(grid[x-1][y+1]);
+        }
+
+        // // Northeast
+        // if(grid[x+1] && grid[x+1][y+1]) {
+        //     ret.push(grid[x+1][y+1]);
+        // }
     }
 
     return ret;
