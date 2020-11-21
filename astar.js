@@ -216,8 +216,15 @@ var astar = {
         astar.init(graph, barriers, stopPoints, partialStopPoints);
 
         options = options || {};
-        var heuristic = options.heuristic || astar.heuristics.manhattan,
-            closest = options.closest || false;
+        var heuristic = options.heuristic
+        if (!heuristic) {
+            if (graph.hex) {
+                heuristic = astar.heuristics.hex
+            } else {
+                heuristic = astar.heuristics.manhattan
+            }
+        }
+        var closest = options.closest || false;
 
         var openHeap = getHeap(),
             closestNode = start; // set the start node to be the closest if required
@@ -345,6 +352,22 @@ var astar = {
             var d1 = Math.abs(pos1.x - pos0.x);
             var d2 = Math.abs(pos1.y - pos0.y);
             return (D * (d1 + d2)) + ((D2 - (2 * D)) * Math.min(d1, d2));
+        },
+        /**
+         * Because the skewed-x-axis grid is being used for hexes, the diagonal
+         * heuristic works in some cases and not in others.
+         * Examples:
+         *  (0, 0) => (2, 2) requires the Manhattan heuristic because the
+         *      diagonals are not connected as would be needed.
+         *  (0, 2) => (2, 0) can allow for diagonal hopping.
+         * Non-diagonal moves are identical between Manhattan and diagonal heuristics.
+         * We can therefore differentiate based on comparing the signs of the x/y differences.
+         */
+        hex: function(pos0, pos1) {
+            if (Math.sign(pos0.x - pos1.x) === Math.sign(pos0.y - pos1.y)) {
+                return astar.heuristics.manhattan(pos0, pos1);
+            }
+            return astar.heuristics.diagonal(pos0, pos1);
         }
     },
 
