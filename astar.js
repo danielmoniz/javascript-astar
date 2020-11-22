@@ -354,12 +354,13 @@ var astar = {
             return (D * (d1 + d2)) + ((D2 - (2 * D)) * Math.min(d1, d2));
         },
         /**
-         * Because the skewed-x-axis grid is being used for hexes, the diagonal
-         * heuristic works in some cases and not in others.
+         * Because the skewed-x-axis grid is being used for hexes, the manhattan
+         * heuristic works in some cases and not in others. In other cases,
+         * we can move two hexes for the price of one because of extra adjacency.
          * Examples:
          *  (0, 0) => (2, 2) requires the Manhattan heuristic because the
-         *      diagonals are not connected as would be needed.
-         *  (0, 2) => (2, 0) can allow for diagonal hopping.
+         *      diagonals are not connected as would be needed.  (distance: 4)
+         *  (0, 2) => (2, 0) can allow for diagonal hopping. (distance: 2)
          * Non-diagonal moves are identical between Manhattan and diagonal heuristics.
          * We can therefore differentiate based on comparing the signs of the x/y differences.
          */
@@ -367,7 +368,10 @@ var astar = {
             if (Math.sign(pos0.x - pos1.x) === Math.sign(pos0.y - pos1.y)) {
                 return astar.heuristics.manhattan(pos0, pos1);
             }
-            return astar.heuristics.diagonal(pos0, pos1);
+            var xDistance = Math.abs(pos1.x - pos0.x);
+            var yDistance = Math.abs(pos1.y - pos0.y);
+            var minSharedDistance = Math.min(xDistance, yDistance);
+            return xDistance + yDistance - minSharedDistance;
         }
     },
 
@@ -631,11 +635,7 @@ Graph.prototype.neighbors = function(node) {
     }
 
     if (this.hex) {
-        // // Southwest
-        // if(grid[x-1] && grid[x-1][y-1]) {
-        //     ret.push(grid[x-1][y-1]);
-        // }
-
+        // Uses skewed x-axis system
         // Southeast
         if(grid[x+1] && grid[x+1][y-1]) {
             ret.push(grid[x+1][y-1]);
@@ -645,11 +645,6 @@ Graph.prototype.neighbors = function(node) {
         if(grid[x-1] && grid[x-1][y+1]) {
             ret.push(grid[x-1][y+1]);
         }
-
-        // // Northeast
-        // if(grid[x+1] && grid[x+1][y+1]) {
-        //     ret.push(grid[x+1][y+1]);
-        // }
     }
 
     return ret;
